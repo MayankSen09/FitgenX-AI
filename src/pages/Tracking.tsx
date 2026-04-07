@@ -75,7 +75,7 @@ export default function Tracking() {
       </main>
 
       {/* Bottom Floating Interaction Area */}
-      <div className="absolute top-1/2 left-0 w-full flex flex-col items-center gap-4 translate-y-16 pointer-events-auto">
+      <div className="absolute bottom-[16rem] left-0 w-full flex flex-col items-center gap-4 pointer-events-auto z-10">
         <button className="bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md px-5 py-2 rounded-full flex items-center gap-2 border border-white/30 shadow-sm active:scale-95 transition-transform">
           <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
           <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
@@ -99,7 +99,7 @@ export default function Tracking() {
       </div>
 
       {/* Bottom Controls */}
-      <div className="absolute bottom-28 left-0 w-full flex justify-center items-center gap-6 px-8 z-10 pointer-events-auto">
+      <div className="absolute bottom-24 left-0 w-full flex justify-center items-center gap-6 px-8 z-10 pointer-events-auto">
          {/* Stop Button routes to Analytics Summary */}
          <button 
            onClick={() => navigate('/analytics')}

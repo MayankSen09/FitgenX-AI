@@ -235,7 +235,7 @@ export default function Onboarding() {
           </div>
         </footer>
 
-        <div className="fixed top-24 -right-12 hidden lg:block w-64 p-6 glass-panel rounded-lg shadow-xl border border-white/20">
+        <div className="hidden w-64 p-6 glass-panel rounded-lg shadow-xl border border-white/20">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-full vitality-gradient flex items-center justify-center shadow-lg">
               <span className="material-symbols-outlined text-white text-xl" data-icon="auto_awesome">auto_awesome</span>

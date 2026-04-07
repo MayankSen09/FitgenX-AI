@@ -17,9 +17,9 @@ export default function SocialFeeds() {
 </button>
 </div>
 </header>
-<main className="pt-24 pb-32 max-w-2xl mx-auto px-4 lg:max-w-5xl lg:grid lg:grid-cols-12 lg:gap-8">
+<main className="pt-24 pb-32 max-w-2xl mx-auto px-4 flex flex-col gap-8">
 
-<div className="lg:col-span-7 space-y-12">
+<div className="w-full space-y-12">
 
 <article className="bg-surface-container-lowest rounded-lg overflow-hidden transition-all duration-300">
 
@@ -36,7 +36,7 @@ export default function SocialFeeds() {
 <button className="bg-surface-container-low px-4 py-1.5 rounded-full text-sm font-bold text-secondary">Follow</button>
 </div>
 
-<div className="relative aspect-square lg:aspect-video w-full px-4">
+<div className="relative aspect-square w-full px-4">
 <img className="w-full h-full object-cover rounded-lg" data-alt="Scenic lakeside running path at sunrise, golden light reflecting on water, misty atmosphere, high-end editorial style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBWqfXUEv-8txuPw1P8JVLuGS2f7A71ZpMoZziwDH-9fbyrISbSyrvhGF1rwKD5QEnPaxo86LOClqIPaIxzsuLpntHymj0DrFjpapP9oQYZVc23_KjsGThf76CdVQ7y09rk0m1JTHcOzZOoZPus0wsNVcTaW9kRLFmtsJql_FPNv9qzEA-D4mAIxZOrqot0zwBFUaabuD92Gyp8KM0aougO4zot0V6qD3uW8IUcnUHWWjFSdDWgLnUNBVBk44-vAmEMQh5iBnIZppk"/>
 
 <div className="absolute bottom-8 right-8 w-32 h-32 rounded-lg border-4 border-white overflow-hidden shadow-xl">
@@ -141,7 +141,7 @@ export default function SocialFeeds() {
 </article>
 </div>
 
-<aside className="hidden lg:block lg:col-span-5 space-y-8 sticky top-24 h-fit">
+<aside className="w-full space-y-8">
 
 <section className="bg-surface-container-lowest rounded-lg p-8 shadow-[0_12px_40px_rgba(0,0,0,0.04)] relative overflow-hidden">
 <div className="absolute top-0 right-0 w-32 h-32 vitality-gradient opacity-10 blur-3xl -mr-16 -mt-16"></div>

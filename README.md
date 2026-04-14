@@ -3,7 +3,7 @@
 ![Aura FitGenX Hero Banner](public/assets/banner.png)
 
 > **The Future of Human Performance.**  
-> A high-performance athletic intelligence platform powered by Google Gemini 1.5 Flash.
+> A high-performance athletic intelligence platform optimized for elite performance.
 
 Aura FitGenX is a premium fitness ecosystem designed for the modern athlete. It combines photorealistic 3D avatar evolution, AI-driven coaching, and an immersive editorial social experience into a single seamless interface.
 
@@ -12,7 +12,7 @@ Aura FitGenX is a premium fitness ecosystem designed for the modern athlete. It 
 ## ✨ Core Pillars
 
 ### 🤖 Aura AI Coach
-Powered by **Gemini 1.5 Flash**, your intelligence core provides data-driven, professional coaching. From powerlifting optimization to cardiovascular peak-performance, Aura analyzes your intent and provides real-time strategic feedback.
+Your advanced intelligence core provides data-driven, professional coaching. From powerlifting optimization to cardiovascular peak-performance, Aura analyzes your intent and provides real-time strategic feedback.
 
 ### 📱 Kinetic Editorial Social
 An immersive, Instagram-inspired social feed designed for performance sharing.
@@ -29,7 +29,7 @@ Watch your digital Twin evolve. Aura uses high-fidelity 3D modeling to represent
 
 - **Frontend**: React 18 + Vite (TypeScript)
 - **Styling**: Tailwind CSS + Custom Design Tokens
-- **AI Engine**: Google Generative AI (Gemini 1.5 Flash)
+- **AI Engine**: Advanced Neural Athletic Intelligence
 - **Animations**: Framer Motion
 - **Icons**: Google Material Symbols (Variable)
 - **Deployment**: Vercel

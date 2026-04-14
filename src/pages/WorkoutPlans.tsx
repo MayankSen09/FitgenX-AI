@@ -14,7 +14,6 @@ const EXERCISES = [
 ];
 
 export default function WorkoutPlans() {
-  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isImmersive, setIsImmersive] = useState(false);

@@ -4,11 +4,9 @@ const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
 export const INITIAL_CHAT_PROMPT = `You are the "Aura AI Coach", a premium, high-performance athletic intelligence assistant for the Aura FitGenX app. Your tone is professional, encouraging, data-driven, and slightly futuristic. You specialize in powerlifting, hypertrophy, and cardiovascular optimization. Keep responses concise and formatted for a mobile chat interface (use short paragraphs or bullet points). Always refer to the user as "Athlete".`;
 
-
-
 export const getGeminiResponse = async (prompt: string, history: any[] = []) => {
   if (!API_KEY) {
-    console.error("VITE_GEMINI_API_KEY is not defined in .env");
+    console.error("VITE_GEMINI_API_KEY is not defined");
     return "The AI Coach intelligence core is not configured. Please check your environment settings.";
   }
 

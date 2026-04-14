@@ -8,8 +8,9 @@ export default function BottomNav() {
   const navItems = [
     { label: 'Home', icon: 'home', to: '/dashboard' },
     { label: 'Explore', icon: 'insights', to: '/workouts' },
-    { label: 'Track', icon: 'add_circle', to: '/tracking' },
+    { label: 'Track', icon: 'add_circle', to: '/track' },
     { label: 'Coach', icon: 'smart_toy', to: '/ai-coach' },
+    { label: 'Social', icon: 'group', to: '/social' },
     { label: 'Profile', icon: 'person', to: '/profile' },
   ];
 

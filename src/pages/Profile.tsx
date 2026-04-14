@@ -45,7 +45,7 @@ export default function Profile() {
 <div className="absolute inset-0 vitality-gradient opacity-5"></div>
 <div className="relative z-10 w-32 h-32 flex items-center justify-center">
 
-<img className="w-full h-full object-contain drop-shadow-2xl" data-alt="A sleek minimalist 3D character design, glowing neon accents, abstract geometric form, soft volumetric lighting, cinematic presentation" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCjc1HpffUxium00jm36P-q4sKC6jQ3edT-GgkNRpVAmtCIV4nQYcJHbOuEi54_FPL3HlAxSmHGZ9kCXzIXGy3MwZbPkJruZuB3GTapCp4FIFKFzBG4CMMQMd4PQLSIzb1SAIE3V1gOs_CitDtkIF6jpryHuCOhChe3id0LVqjrbZcqyRPWeaM_1l90NT1APZ5h4Gg5QktGTmQwPkmZk5u2KQCgucFltlcAvtkFVmAt-Z3iAOu1Z8boBD1F0oVYZEUhIUdMRY0vTXw"/>
+<img className="w-full h-full object-contain drop-shadow-2xl scale-110" data-alt="Premium athletic male avatar in futuristic gear" src="/assets/avatar_male.png"/>
 </div>
 <div className="text-center z-10">
 <h3 className="font-headline font-bold text-lg">Nova</h3>

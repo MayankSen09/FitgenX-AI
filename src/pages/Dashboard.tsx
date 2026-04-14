@@ -145,7 +145,7 @@ export default function Dashboard() {
 
       </main>
 
-      <button onClick={() => navigate('/tracking')} className="fixed right-6 bottom-32 w-16 h-16 rounded-full bg-primary text-white shadow-2xl flex items-center justify-center z-50 active:scale-90 transition-transform duration-200 ring-4 ring-white dark:ring-zinc-900 shadow-primary/40">
+      <button onClick={() => navigate('/track')} className="fixed right-6 bottom-32 w-16 h-16 rounded-full bg-primary text-white shadow-2xl flex items-center justify-center z-50 active:scale-90 transition-transform duration-200 ring-4 ring-white dark:ring-zinc-900 shadow-primary/40">
         <span className="material-symbols-outlined text-3xl">add</span>
       </button>
 

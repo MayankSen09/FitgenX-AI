@@ -1,233 +1,306 @@
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { StoryViewer, type Story } from '../components/StoryViewer';
+
+interface Post {
+  id: number;
+  author: string;
+  role: string;
+  authorImg: string;
+  time: string;
+  content: string;
+  image: string;
+  metrics?: { label: string; value: string; unit: string }[];
+  likes: number;
+  comments: number;
+  isLiked: boolean;
+  isFollowing: boolean;
+}
+
+const STORIES_DATA: Story[] = [
+  {
+    id: 'my-story',
+    username: 'My Story',
+    avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBTOQhgJZLgA3tmXjEVMPI3shCqR2vGzHAryFHKeJBhbxFszS5n0fK6cjvg9j1O-bQkuliaZjLVFBVHcTvw7x2B70sa2PRi9WiqQyGfVwkzAkixr4gTTdHsz_8pX0im7Xy248KqFSZZs2Rx9EKnNg_g4Xjm2h0Zb645LyDcYTPQgKZ-zmlWQga8nkwQ2J9yzaztLl-aGpS_d6rtymvxu8Z4Sz4Zli6kD58d56RPqb6bgzoYthibbfBLsf57UTW4-iAVRqwVnH85TiY',
+    segments: [
+      { id: 'seg1', imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBDfaLcIlnUV-J97K4IIcFtuCM4lf2Ov4A_qbN8OnJFiya1DJ912PsaLIjwT7dW4-od2Exb1AaGEyGDNaGAA-kB7-JVDXyuuLy_e1QUr2UhUNOZ8I1sMboJ2dyqBBgeZ-PHFH7vpZyTu1ICZaeLVDg1j6mQ0hxLrmcn-e_O84TLGzOalOEiQavriZ0ZYM8LdZYILHqNU9hgEdJN-ZwKGE_IdW9xDinqO8BHSqIiLFEaaDxK1V8f3OS9MN5ekBN0n9tISbQnq4KxH6Y', duration: 5 },
+      { id: 'seg2', imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBWqfXUEv-8txuPw1P8JVLuGS2f7A71ZpMoZziwDH-9fbyrISbSyrvhGF1rwKD5QEnPaxo86LOClqIPaIxzsuLpntHymj0DrFjpapP9oQYZVc23_KjsGThf76CdVQ7y09rk0m1JTHcOzZOoZPus0wsNVcTaW9kRLFmtsJql_FPNv9qzEA-D4mAIxZOrqot0zwBFUaabuD92Gyp8KM0aougO4zot0V6qD3uW8IUcnUHWWjFSdDWgLnUNBVBk44-vAmEMQh5iBnIZppk', duration: 5 }
+    ]
+  },
+  {
+    id: 'marcus',
+    username: 'Marcus',
+    avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBkms0GqjrjNE46Zp_5Iy_n6L23EleWwbTuA9wKtxNZk6t7Yfjpev0nQbKOm5ius8FAkdwielryAjCvDEWtt0IPyWYGlqWjAw2Ncgt0x-rytBisWqTWbFWbCVMuCyu21b1BY5xwS71PLCto-ZLI1pY4XCoj0oywGOmQ_YNi6VXeZtmiHB-DtvI4dmnSDhNWg9ZkIs9wJ_1SdWnuNPOrWSdOcKxT3YzcTdJY82no-DitZGAXkhwT8KBWLfFmL-cCYMTfqZsoadrd-6k',
+    segments: [
+      { id: 'seg1', imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAw8L7Ul5ZjALbPudX5LZuhj2wx-f5_bzl2rW3a8doCY1p2kI_19DPq7kr8hbN3mOdan506q5BOvVBoeSr603c3cST7teQxTK4ol0JLPbqr9jo5zmBJOCqAwHAxRoXzWDDL9esM_688ih4FO1pNyR6iZJWNxXFMrir5AMBEPYVvBIus5mVKpOgFlMdlhYu2BbGTv464Wk6cUt4J48WMJH6CR2xXP63_H1rY9WPLz2fk7aG9j08d7DB32pf6bNtEl3SyrJPC4RZT6aQ', duration: 4 },
+      { id: 'seg2', imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDtH2-s_CP-vB1FPXqMtrWRKOAuzLe47iWhekpdefJUqgVpoTjlbmjVvUZPrteEWEr9lWUl7-AfGD-QmTPxB_yVOI22wpWdkdOaj_25CXgs_B2siuoku21zBWmCI48Mo00v_Xz_J5vyCN9Ej7Gs6TEBSp03EuzabBvy4-AuEUVRaHI8lTGry9PAAxh7vovjVtrtqZiZ8B7Hk1l37jhKeS3RcVuVPzBWcUVLW81p22JxIdjv7wlIqaa2ZdE4XpXmMsiX-iKR92dz9zA', duration: 5 },
+      { id: 'seg3', imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDtH2-s_CP-vB1FPXqMtrWRKOAuzLe47iWhekpdefJUqgVpoTjlbmjVvUZPrteEWEr9lWUl7-AfGD-QmTPxB_yVOI22wpWdkdOaj_25CXgs_B2siuoku21zBWmCI48Mo00v_Xz_J5vyCN9Ej7Gs6TEBSp03EuzabBvy4-AuEUVRaHI8lTGry9PAAxh7vovjVtrtqZiZ8B7Hk1l37jhKeS3RcVuVPzBWcUVLW81p22JxIdjv7wlIqaa2ZdE4XpXmMsiX-iKR92dz9zA', duration: 4 }
+    ]
+  },
+  {
+    id: 'elena',
+    username: 'Elena',
+    avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD8VCtoVlWwR9rSWvrCjg-HqHScinDhair1Ir2DVCJusPBkYTCIftTDbd2fXfY-kImd82mBRqfJYPyi6AdIUzrkC482cYAmxEoTHtABlD2FPK4kcpTKFrgxhwqO4n5n5ijC6DDXBsT7GtRIVVELRO49IKgXHY_oCafgb1Y9FG5s_Ba5iUmowxs_IQMSmVZrAXjCywblRins3mi-6Imyi-Ih-4uOCOfnZh2wDQJn6TaheXzxKd8guEiF-BukEaHo7tSZ6q230438SEo',
+    segments: [
+      { id: 'seg1', imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCRc34txz8O7rOa8f8HrvKPD0Bi4-oor_IDI0FZ6DV_BG6-f6OheJ09T1i_x1GbY6WAns-DjR7nD8pTaT4h33YTlr_AakN3qMJ2S2gF8iEbIMdnHf3BPqIyFu10ysARCzXZj0T6zsSDotIWX7qNaEXfAQtwqbjRd4qdY9Kzkgl-9y0BsZjwxgJNoFOSE8eY5IA_oGtnLjmpIPj8KV10yhJJV9NGzX6g-bE7OCdjw9QMDiZu-wpR3zmwEPac3rvKucroqKFzGZHlf70', duration: 6 },
+      { id: 'seg2', imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBWqfXUEv-8txuPw1P8JVLuGS2f7A71ZpMoZziwDH-9fbyrISbSyrvhGF1rwKD5QEnPaxo86LOClqIPaIxzsuLpntHymj0DrFjpapP9oQYZVc23_KjsGThf76CdVQ7y09rk0m1JTHcOzZOoZPus0wsNVcTaW9kRLFmtsJql_FPNv9qzEA-D4mAIxZOrqot0zwBFUaabuD92Gyp8KM0aougO4zot0V6qD3uW8IUcnUHWWjFSdDWgLnUNBVBk44-vAmEMQh5iBnIZppk', duration: 5 }
+    ]
+  },
+  {
+    id: 'sarah',
+    username: 'Sarah',
+    avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDvquJ5Snlnv4FXeE_PB1bKlx_4vpFF1eVATPdYHUeiu4zgZGCIpzV_C6UgIIdfJ03jBwEE2J6VDQlglwuWQBlYsZg58de1UJRBbPs_iTYf2NDoXNuPUkmOHC4y-_vYWNn8xQfMjM8EhDXUzS4f76C_-8dmxybeo33UQJaCWQWegJbuFSGbSB3POacoFoz9gAnQm0KI-WnRNTq7KroKe4WpXwGjMY9GqXGB8XTCXCgGKfcFrVBRfSYO9tATJDMVU3MhjJvGx1u7T34',
+    segments: [
+      { id: 'seg1', imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCRc34txz8O7rOa8f8HrvKPD0Bi4-oor_IDI0FZ6DV_BG6-f6OheJ09T1i_x1GbY6WAns-DjR7nD8pTaT4h33YTlr_AakN3qMJ2S2gF8iEbIMdnHf3BPqIyFu10ysARCzXZj0T6zsSDotIWX7qNaEXfAQtwqbjRd4qdY9Kzkgl-9y0BsZjwxgJNoFOSE8eY5IA_oGtnLjmpIPj8KV10yhJJV9NGzX6g-bE7OCdjw9QMDiZu-wpR3zmwEPac3rvKucroqKFzGZHlf70', duration: 5 }
+    ]
+  }
+];
+
+const INITIAL_POSTS: Post[] = [
+  {
+    id: 1,
+    author: "Elena Rodriguez",
+    role: "Marathon Athlete",
+    authorImg: "https://lh3.googleusercontent.com/aida-public/AB6AXuCRc34txz8O7rOa8f8HrvKPD0Bi4-oor_IDI0FZ6DV_BG6-f6OheJ09T1i_x1GbY6WAns-DjR7nD8pTaT4h33YTlr_AakN3qMJ2S2gF8iEbIMdnHf3BPqIyFu10ysARCzXZj0T6zsSDotIWX7qNaEXfAQtwqbjRd4qdY9Kzkgl-9y0BsZjwxgJNoFOSE8eY5IA_oGtnLjmpIPj8KV10yhJJV9NGzX6g-bE7OCdjw9QMDiZu-wpR3zmwEPac3rvKucroqKFzGZHlf70",
+    time: "45m ago",
+    content: "Chasing the sunrise at the lake today. Biological efficiency is peaking.",
+    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBWqfXUEv-8txuPw1P8JVLuGS2f7A71ZpMoZziwDH-9fbyrISbSyrvhGF1rwKD5QEnPaxo86LOClqIPaIxzsuLpntHymj0DrFjpapP9oQYZVc23_KjsGThf76CdVQ7y09rk0m1JTHcOzZOoZPus0wsNVcTaW9kRLFmtsJql_FPNv9qzEA-D4mAIxZOrqot0zwBFUaabuD92Gyp8KM0aougO4zot0V6qD3uW8IUcnUHWWjFSdDWgLnUNBVBk44-vAmEMQh5iBnIZppk",
+    metrics: [
+      { label: "Distance", value: "10.2", unit: "km" },
+      { label: "Avg Pace", value: "4'52", unit: "/km" },
+      { label: "HR", value: "164", unit: "bpm" }
+    ],
+    likes: 124,
+    comments: 18,
+    isLiked: false,
+    isFollowing: false
+  },
+  {
+    id: 2,
+    author: "Marcus Thorne",
+    role: "Powerlifter",
+    authorImg: "https://lh3.googleusercontent.com/aida-public/AB6AXuDtH2-s_CP-vB1FPXqMtrWRKOAuzLe47iWhekpdefJUqgVpoTjlbmjVvUZPrteEWEr9lWUl7-AfGD-QmTPxB_yVOI22wpWdkdOaj_25CXgs_B2siuoku21zBWmCI48Mo00v_Xz_J5vyCN9Ej7Gs6TEBSp03EuzabBvy4-AuEUVRaHI8lTGry9PAAxh7vovjVtrtqZiZ8B7Hk1l37jhKeS3RcVuVPzBWcUVLW81p22JxIdjv7wlIqaa2ZdE4XpXmMsiX-iKR92dz9zA",
+    time: "2h ago",
+    content: "Upper body power session. Pushing the limits of 1RM today.",
+    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAw8L7Ul5ZjALbPudX5LZuhj2wx-f5_bzl2rW3a8doCY1p2kI_19DPq7kr8hbN3mOdan506q5BOvVBoeSr603c3cST7teQxTK4ol0JLPbqr9jo5zmBJOCqAwHAxRoXzWDDL9esM_688ih4FO1pNyR6iZJWNxXFMrir5AMBEPYVvBIus5mVKpOgFlMdlhYu2BbGTv464Wk6cUt4J48WMJH6CR2xXP63_H1rY9WPLz2fk7aG9j08d7DB32pf6bNtEl3SyrJPC4RZT6aQ",
+    metrics: [
+       { label: "Volume", value: "12,400", unit: "kg" },
+       { label: "Intensity", value: "92", unit: "%" }
+    ],
+    likes: 89,
+    comments: 5,
+    isLiked: false,
+    isFollowing: true
+  }
+];
 
 export default function SocialFeeds() {
+  const [posts, setPosts] = useState<Post[]>(INITIAL_POSTS);
+  const [newPostText, setNewPostText] = useState('');
+  const [isPosting, setIsPosting] = useState(false);
+  const [activeStoryIndex, setActiveStoryIndex] = useState<number | null>(null);
+
+  const toggleLike = (id: number) => {
+    setPosts(prev => prev.map(p => {
+      if (p.id === id) {
+        return {
+          ...p,
+          isLiked: !p.isLiked,
+          likes: p.isLiked ? p.likes - 1 : p.likes + 1
+        };
+      }
+      return p;
+    }));
+  };
+
+  const toggleFollow = (author: string) => {
+    setPosts(prev => prev.map(p => {
+      if (p.author === author) {
+        return { ...p, isFollowing: !p.isFollowing };
+      }
+      return p;
+    }));
+  };
+
+  const handlePost = () => {
+    if (!newPostText.trim()) return;
+    setIsPosting(true);
+    
+    // Simulate natural posting delay
+    setTimeout(() => {
+      const newPost: Post = {
+        id: Date.now(),
+        author: "Alex Rivera", // From Profile.tsx
+        role: "Level 14 Athlete",
+        authorImg: "https://lh3.googleusercontent.com/aida-public/AB6AXuBTOQhgJZLgA3tmXjEVMPI3shCqR2vGzHAryFHKeJBhbxFszS5n0fK6cjvg9j1O-bQkuliaZjLVFBVHcTvw7x2B70sa2PRi9WiqQyGfVwkzAkixr4gTTdHsz_8pX0im7Xy248KqFSZZs2Rx9EKnNg_g4Xjm2h0Zb645LyDcYTPQgKZ-zmlWQga8nkwQ2J9yzaztLl-aGpS_d6rtymvxu8Z4Sz4Zli6kD58d56RPqb6bgzoYthibbfBLsf57UTW4-iAVRqwVnH85TiY",
+        time: "Just now",
+        content: newPostText,
+        image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBDfaLcIlnUV-J97K4IIcFtuCM4lf2Ov4A_qbN8OnJFiya1DJ912PsaLIjwT7dW4-od2Exb1AaGEyGDNaGAA-kB7-JVDXyuuLy_e1QUr2UhUNOZ8I1sMboJ2dyqBBgeZ-PHFH7vpZyTu1ICZaeLVDg1j6mQ0hxLrmcn-e_O84TLGzOalOEiQavriZ0ZYM8LdZYILHqNU9hgEdJN-ZwKGE_IdW9xDinqO8BHSqIiLFEaaDxK1V8f3OS9MN5ekBN0n9tISbQnq4KxH6Y",
+        likes: 0,
+        comments: 0,
+        isLiked: false,
+        isFollowing: true
+      };
+      setPosts([newPost, ...posts]);
+      setNewPostText('');
+      setIsPosting(false);
+    }, 1200);
+  };
+
   return (
-    <>
-      
+    <div className="bg-bg-primary min-h-screen pb-32">
+      <header className="fixed top-0 w-full max-w-[430px] left-1/2 -translate-x-1/2 z-50 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl flex justify-between items-center px-6 py-4 border-b border-outline-variant/10">
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-bold tracking-tighter text-zinc-900 dark:text-zinc-50 font-headline">Aura Community</h1>
+        </div>
+        <div className="flex items-center gap-4">
+          <button className="material-symbols-outlined text-zinc-900 dark:text-zinc-50 hover:opacity-80 transition-opacity active:scale-95 duration-200 p-2 bg-surface-container-low rounded-full">notifications</button>
+        </div>
+      </header>
 
-<header className="fixed top-0 w-full max-w-[430px] left-1/2 -translate-x-1/2 z-50 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl flex justify-between items-center px-6 py-4">
-<div className="flex items-center gap-3">
-<div className="w-10 h-10 rounded-full overflow-hidden">
-<img alt="User Profile Avatar" className="w-full h-full object-cover" data-alt="Close-up portrait of a professional woman in athletic wear, soft natural lighting, minimalist aesthetic background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBcHF3Hz8pftsREQji40RhqPDl4iF0FubACkRld1iJMKmSguDrlSxckmIY-N2vjCg5fx22qbcKMjlB3Gff6ELWltQIyc9ywFQY4-RTTwgSH8PIfmmU4SXBliDedoKWvklo_9FyKAecIVRTKBO8SSnIbxuEuvEn7h8D9WJA2fFUddvBNgJvZFj38UsHJCJEQseLmPRHIm5QC768UUAbF8Tn4BRyeu4YMfoxfrt9aGare3dAtqESuKKDXXqjovJ3FZbg5F92qfG5PBNU"/>
-</div>
-<h1 className="text-xl font-bold tracking-tighter text-zinc-900 dark:text-zinc-50 font-headline">Goals</h1>
-</div>
-<div className="flex items-center gap-4">
-<button className="text-zinc-900 dark:text-zinc-50 hover:opacity-80 transition-opacity active:scale-95 duration-200">
-<span className="material-symbols-outlined" data-icon="notifications">notifications</span>
-</button>
-</div>
-</header>
-<main className="pt-24 pb-32 max-w-2xl mx-auto px-4 flex flex-col gap-8">
+      <main className="pt-24 px-4 max-w-[430px] mx-auto space-y-8 overflow-x-hidden">
+        
+        {/* Athlete Stories Bar */}
+        <section className="flex gap-4 overflow-x-auto no-scrollbar pb-2 pt-2 px-1">
+           {STORIES_DATA.map((story, i) => (
+             <button
+               key={story.id}
+               onClick={() => setActiveStoryIndex(i)}
+               className="flex flex-col items-center gap-2 flex-shrink-0 bg-transparent border-none cursor-pointer p-0 outline-none group"
+             >
+               <div className={`w-20 h-20 rounded-full p-[3.5px] flex-shrink-0 relative transition-transform active:scale-90 duration-300 ${i > 0 ? 'vitality-gradient shadow-lg shadow-secondary/15' : 'bg-outline-variant/20'}`}>
+                 <div className="w-full h-full rounded-full border-[3px] border-white dark:border-zinc-900 overflow-hidden relative">
+                   <img src={story.avatarUrl} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt={story.username} />
+                 </div>
+                 {i === 0 && (
+                   <div className="absolute bottom-0 right-0 w-6 h-6 bg-secondary rounded-full border-2 border-white dark:border-zinc-900 flex items-center justify-center text-white">
+                     <span className="material-symbols-outlined text-[16px]">add</span>
+                   </div>
+                 )}
+               </div>
+               <span className="text-[10px] font-bold font-label uppercase tracking-widest text-on-surface-variant/80">{story.username}</span>
+             </button>
+           ))}
+        </section>
 
-<div className="w-full space-y-12">
-
-<article className="bg-surface-container-lowest rounded-lg overflow-hidden transition-all duration-300">
-
-<div className="flex items-center justify-between p-6">
-<div className="flex items-center gap-3">
-<div className="w-12 h-12 rounded-full overflow-hidden">
-<img className="w-full h-full object-cover" data-alt="Portrait of a female runner with athletic headband, looking motivated, bright morning sun" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCRc34txz8O7rOa8f8HrvKPD0Bi4-oor_IDI0FZ6DV_BG6-f6OheJ09T1i_x1GbY6WAns-DjR7nD8pTaT4h33YTlr_AakN3qMJ2S2gF8iEbIMdnHf3BPqIyFu10ysARCzXZj0T6zsSDotIWX7qNaEXfAQtwqbjRd4qdY9Kzkgl-9y0BsZjwxgJNoFOSE8eY5IA_oGtnLjmpIPj8KV10yhJJV9NGzX6g-bE7OCdjw9QMDiZu-wpR3zmwEPac3rvKucroqKFzGZHlf70"/>
-</div>
-<div>
-<h3 className="font-bold text-on-surface">Elena Rodriguez</h3>
-<p className="text-sm text-outline">Completed 10km Run • 45m ago</p>
-</div>
-</div>
-<button className="bg-surface-container-low px-4 py-1.5 rounded-full text-sm font-bold text-secondary">Follow</button>
-</div>
-
-<div className="relative aspect-square w-full px-4">
-<img className="w-full h-full object-cover rounded-lg" data-alt="Scenic lakeside running path at sunrise, golden light reflecting on water, misty atmosphere, high-end editorial style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBWqfXUEv-8txuPw1P8JVLuGS2f7A71ZpMoZziwDH-9fbyrISbSyrvhGF1rwKD5QEnPaxo86LOClqIPaIxzsuLpntHymj0DrFjpapP9oQYZVc23_KjsGThf76CdVQ7y09rk0m1JTHcOzZOoZPus0wsNVcTaW9kRLFmtsJql_FPNv9qzEA-D4mAIxZOrqot0zwBFUaabuD92Gyp8KM0aougO4zot0V6qD3uW8IUcnUHWWjFSdDWgLnUNBVBk44-vAmEMQh5iBnIZppk"/>
-
-<div className="absolute bottom-8 right-8 w-32 h-32 rounded-lg border-4 border-white overflow-hidden shadow-xl">
-<div className="w-full h-full bg-surface-container-high" data-location="Zurich, Switzerland" style={{  }}>
-<img className="w-full h-full object-cover grayscale opacity-80" data-alt="Clean minimalist map interface showing a running route line through a city park and lakefront" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyJwSR_izQKqxcHqdIZi9WrpRAxvt0_OuqyAQ7PcDxyttBboYDFaDU4IFQgjFpLTFvk9n4bgVSvUUKai42hGIMV695_vVz8a_IYCSJpuZNq7vZBYwgR-Vr-Sy8FCzE9PQDcsKnFw1bIvmDcuXgWAvm0xrY8b4tysK51GOvrEKFvucPrU6KhB9CGnu-l_fT5asshSsFEXcKo-s7A5f7PX3csyLqgJafk-pvGlnsvZERTGRH2LbHbVMfuDaSHI3pwtCZzusriarHo8c"/>
-<div className="absolute inset-0 flex items-center justify-center">
-<div className="w-2 h-2 bg-secondary rounded-full ring-4 ring-secondary/20"></div>
-</div>
-</div>
-</div>
-</div>
-
-<div className="p-6">
-<div className="flex gap-8 mb-6">
-<div>
-<p className="text-[0.6875rem] uppercase tracking-widest font-bold text-outline">Distance</p>
-<p className="text-2xl font-headline font-extrabold text-secondary">10.2 <span className="text-sm font-body font-normal text-on-surface">km</span></p>
-</div>
-<div>
-<p className="text-[0.6875rem] uppercase tracking-widest font-bold text-outline">Avg Pace</p>
-<p className="text-2xl font-headline font-extrabold">4'52 <span className="text-sm font-body font-normal">/km</span></p>
-</div>
-<div>
-<p className="text-[0.6875rem] uppercase tracking-widest font-bold text-outline">Elevation</p>
-<p className="text-2xl font-headline font-extrabold">142 <span className="text-sm font-body font-normal">m</span></p>
-</div>
-</div>
-
-<div className="flex items-center justify-between border-t border-outline-variant/15 pt-6">
-<div className="flex gap-6">
-<button className="flex items-center gap-2 group">
-<span className="material-symbols-outlined text-outline group-hover:text-red-500 transition-colors" data-icon="favorite">favorite</span>
-<span className="text-sm font-bold">124</span>
-</button>
-<button className="flex items-center gap-2 group">
-<span className="material-symbols-outlined text-outline group-hover:text-secondary transition-colors" data-icon="chat_bubble">chat_bubble</span>
-<span className="text-sm font-bold">18</span>
-</button>
-<button className="flex items-center gap-2 group">
-<span className="material-symbols-outlined text-outline group-hover:text-secondary transition-colors" data-icon="share">share</span>
-</button>
-</div>
-<button className="text-outline hover:text-on-surface transition-colors">
-<span className="material-symbols-outlined" data-icon="bookmark">bookmark</span>
-</button>
-</div>
-</div>
-</article>
-
-<article className="bg-surface-container-lowest rounded-lg overflow-hidden transition-all duration-300">
-<div className="flex items-center justify-between p-6">
-<div className="flex items-center gap-3">
-<div className="w-12 h-12 rounded-full overflow-hidden">
-<img className="w-full h-full object-cover" data-alt="Portrait of a muscular man in a dark gym, focused expression, cinematic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDtH2-s_CP-vB1FPXqMtrWRKOAuzLe47iWhekpdefJUqgVpoTjlbmjVvUZPrteEWEr9lWUl7-AfGD-QmTPxB_yVOI22wpWdkdOaj_25CXgs_B2siuoku21zBWmCI48Mo00v_Xz_J5vyCN9Ej7Gs6TEBSp03EuzabBvy4-AuEUVRaHI8lTGry9PAAxh7vovjVtrtqZiZ8B7Hk1l37jhKeS3RcVuVPzBWcUVLW81p22JxIdjv7wlIqaa2ZdE4XpXmMsiX-iKR92dz9zA"/>
-</div>
-<div>
-<h3 className="font-bold text-on-surface">Marcus Thorne</h3>
-<p className="text-sm text-outline">Upper Body Power Session • 2h ago</p>
-</div>
-</div>
-<button className="text-outline hover:text-on-surface transition-colors">
-<span className="material-symbols-outlined" data-icon="more_horiz">more_horiz</span>
-</button>
-</div>
-<div className="grid grid-cols-2 gap-2 px-4 h-96">
-<img className="w-full h-full object-cover rounded-lg" data-alt="High-end gym equipment, weights and benches in a minimalist boutique fitness studio" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAw8L7Ul5ZjALbPudX5LZuhj2wx-f5_bzl2rW3a8doCY1p2kI_19DPq7kr8hbN3mOdan506q5BOvVBoeSr603c3cST7teQxTK4ol0JLPbqr9jo5zmBJOCqAwHAxRoXzWDDL9esM_688ih4FO1pNyR6iZJWNxXFMrir5AMBEPYVvBIus5mVKpOgFlMdlhYu2BbGTv464Wk6cUt4J48WMJH6CR2xXP63_H1rY9WPLz2fk7aG9j08d7DB32pf6bNtEl3SyrJPC4RZT6aQ"/>
-<div className="grid grid-rows-2 gap-2">
-<img className="w-full h-full object-cover rounded-lg" data-alt="Athlete lifting heavy barbell, focus on hands and grip, dramatic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBDfaLcIlnUV-J97K4IIcFtuCM4lf2Ov4A_qbN8OnJFiya1DJ912PsaLIjwT7dW4-od2Exb1AaGEyGDNaGAA-kB7-JVDXyuuLy_e1QUr2UhUNOZ8I1sMboJ2dyqBBgeZ-PHFH7vpZyTu1ICZaeLVDg1j6mQ0hxLrmcn-e_O84TLGzOalOEiQavriZ0ZYM8LdZYILHqNU9hgEdJN-ZwKGE_IdW9xDinqO8BHSqIiLFEaaDxK1V8f3OS9MN5ekBN0n9tISbQnq4KxH6Y"/>
-<div className="relative rounded-lg overflow-hidden">
-<img className="w-full h-full object-cover" data-alt="Close up of a smart watch showing heart rate on a sweating wrist" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGqB6hABVCwXWbH4Oo--_skScvXVx_lMF2rjHgqsonb56ediE7y5Yx5Eu5YAjwg8EzCL0KAZixMJrAyePKnefSp_Ysgisuh4pJU30gMNRUlbGFGod-2JZmGsihxVkBXBEcBKlicpi8DI-CMYldLHZCFPR09LawBYN0C5b7hIzm1Xv3RrE3bbn75fMa-Yl07l-b29HWRw24kTp1xfj_Hu95_cpZBb3Aulh4C9E5OuZs8_OBSdVoKHIKospCkn2MRnBUB1sZ2yMFLUM"/>
-<div className="absolute inset-0 bg-primary/40 flex items-center justify-center backdrop-blur-sm">
-<span className="text-white font-bold text-xl">+4 Photos</span>
-</div>
-</div>
-</div>
-</div>
-<div className="p-6">
-<div className="bg-surface-container-low rounded-xl p-4 mb-6">
-<h4 className="text-xs font-bold uppercase tracking-widest text-outline mb-2">Highlights</h4>
-<ul className="space-y-1 text-sm font-medium">
-<li className="flex justify-between"><span>Bench Press</span><span className="text-secondary">4 x 8 @ 95kg</span></li>
-<li className="flex justify-between"><span>Overhead Press</span><span className="text-secondary">3 x 10 @ 60kg</span></li>
-<li className="flex justify-between"><span>Pull Ups</span><span className="text-secondary">3 x Max</span></li>
-</ul>
-</div>
-<div className="flex items-center justify-between border-t border-outline-variant/15 pt-6">
-<div className="flex gap-6">
-<button className="flex items-center gap-2 group">
-<span className="material-symbols-outlined text-outline group-hover:text-red-500 transition-colors" data-icon="favorite">favorite</span>
-<span className="text-sm font-bold">89</span>
-</button>
-<button className="flex items-center gap-2 group">
-<span className="material-symbols-outlined text-outline group-hover:text-secondary transition-colors" data-icon="chat_bubble">chat_bubble</span>
-<span className="text-sm font-bold">5</span>
-</button>
-<button className="flex items-center gap-2 group">
-<span className="material-symbols-outlined text-outline group-hover:text-secondary transition-colors" data-icon="share">share</span>
-</button>
-</div>
-</div>
-</div>
-</article>
-</div>
-
-<aside className="w-full space-y-8">
-
-<section className="bg-surface-container-lowest rounded-lg p-8 shadow-[0_12px_40px_rgba(0,0,0,0.04)] relative overflow-hidden">
-<div className="absolute top-0 right-0 w-32 h-32 vitality-gradient opacity-10 blur-3xl -mr-16 -mt-16"></div>
-<div className="flex justify-between items-start mb-6">
-<div>
-<span className="text-[0.6875rem] uppercase tracking-widest font-bold text-tertiary">Active Challenge</span>
-<h2 className="text-2xl font-headline font-extrabold mt-1">Step Challenge</h2>
-<p className="text-sm text-outline font-medium">Day 4/7</p>
-</div>
-<span className="material-symbols-outlined text-tertiary text-3xl" data-icon="footprint">footprint</span>
-</div>
-<div className="space-y-4">
-<div className="flex justify-between items-end">
-<span className="text-3xl font-headline font-extrabold">42,500 <span className="text-sm font-body font-normal text-outline">/ 70,000 steps</span></span>
-<span className="text-sm font-bold text-tertiary">61%</span>
-</div>
-<div className="h-3 w-full bg-surface-container-high rounded-full overflow-hidden">
-<div className="h-full vitality-gradient rounded-full" style={{ width: '61%' }}></div>
-</div>
-</div>
-<button className="w-full mt-8 py-4 bg-primary text-on-primary rounded-full font-bold text-sm hover:opacity-90 transition-opacity active:scale-[0.98]">
-                    View Challenge Details
+        {/* Compose Post */}
+        <section className="bg-surface-container-lowest rounded-3xl p-6 shadow-sm border border-outline-variant/10">
+          <div className="flex gap-4">
+            <div className="w-12 h-12 rounded-full overflow-hidden shrink-0">
+              <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBTOQhgJZLgA3tmXjEVMPI3shCqR2vGzHAryFHKeJBhbxFszS5n0fK6cjvg9j1O-bQkuliaZjLVFBVHcTvw7x2B70sa2PRi9WiqQyGfVwkzAkixr4gTTdHsz_8pX0im7Xy248KqFSZZs2Rx9EKnNg_g4Xjm2h0Zb645LyDcYTPQgKZ-zmlWQga8nkwQ2J9yzaztLl-aGpS_d6rtymvxu8Z4Sz4Zli6kD58d56RPqb6bgzoYthibbfBLsf57UTW4-iAVRqwVnH85TiY" className="w-full h-full object-cover" alt="Me" />
+            </div>
+            <div className="flex-grow">
+              <textarea 
+                value={newPostText}
+                onChange={(e) => setNewPostText(e.target.value)}
+                placeholder="Share your biological breakthrough..."
+                className="w-full bg-transparent border-none resize-none font-medium placeholder:text-outline-variant focus:ring-0 min-h-[60px]"
+              />
+              <div className="flex justify-between items-center mt-4 pt-4 border-t border-outline-variant/5">
+                <div className="flex gap-3">
+                  <span className="material-symbols-outlined text-secondary opacity-60">image</span>
+                  <span className="material-symbols-outlined text-tertiary opacity-60">fitness_center</span>
+                  <span className="material-symbols-outlined text-outline opacity-60">location_on</span>
+                </div>
+                <button 
+                  onClick={handlePost}
+                  disabled={isPosting || !newPostText.trim()}
+                  className="bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-6 py-2 rounded-full font-bold text-xs active:scale-95 transition-all disabled:opacity-30"
+                >
+                  {isPosting ? 'Architecting...' : 'Broadcast'}
                 </button>
-</section>
+              </div>
+            </div>
+          </div>
+        </section>
 
-<section className="bg-surface-container-low rounded-lg p-8">
-<div className="flex items-center justify-between mb-8">
-<h2 className="text-lg font-headline font-extrabold">Local Segment</h2>
-<span className="text-xs font-bold text-secondary uppercase tracking-wider">River Run 5K</span>
-</div>
-<div className="space-y-6">
+        {/* Feed */}
+        <div className="space-y-12">
+          <AnimatePresence mode="popLayout">
+            {posts.map(post => (
+              <motion.article 
+                layout
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                key={post.id}
+                className="bg-surface-container-lowest rounded-[2.5rem] overflow-hidden shadow-[0_12px_40px_rgba(0,0,0,0.06)] border border-outline-variant/5 transition-all duration-300"
+              >
+                <div className="flex items-center justify-between p-7">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full overflow-hidden p-0.5 border-2 border-secondary/20">
+                      <img className="w-full h-full object-cover rounded-full" src={post.authorImg} alt={post.author} />
+                    </div>
+                    <div>
+                      <h3 className="font-headline font-bold text-zinc-900 dark:text-zinc-50">{post.author}</h3>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-outline-variant">{post.role} • {post.time}</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => toggleFollow(post.author)}
+                    className={`px-5 py-1.5 rounded-full text-[10px] font-bold transition-all active:scale-95 ${post.isFollowing ? 'bg-surface-container-high text-on-surface-variant' : 'bg-secondary text-white'}`}
+                  >
+                    {post.isFollowing ? 'Following' : 'Follow'}
+                  </button>
+                </div>
 
-<div className="flex items-center gap-4">
-<span className="w-6 text-sm font-bold text-outline">01</span>
-<div className="w-10 h-10 rounded-full border-2 border-secondary p-0.5">
-<img className="w-full h-full object-cover rounded-full" data-alt="Headshot of a competitive male athlete" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBkms0GqjrjNE46Zp_5Iy_n6L23EleWwbTuA9wKtxNZk6t7Yfjpev0nQbKOm5ius8FAkdwielryAjCvDEWtt0IPyWYGlqWjAw2Ncgt0x-rytBisWqTWbFWbCVMuCyu21b1BY5xwS71PLCto-ZLI1pY4XCoj0oywGOmQ_YNi6VXeZtmiHB-DtvI4dmnSDhNWg9ZkIs9wJ_1SdWnuNPOrWSdOcKxT3YzcTdJY82no-DitZGAXkhwT8KBWLfFmL-cCYMTfqZsoadrd-6k"/>
-</div>
-<div className="flex-1">
-<p className="text-sm font-bold">David Chen</p>
-<p className="text-xs text-outline">18:42 min</p>
-</div>
-<span className="material-symbols-outlined text-yellow-500 text-sm" data-icon="workspace_premium" style={{ fontVariationSettings: '"FILL" 1' }}>workspace_premium</span>
-</div>
-
-<div className="flex items-center gap-4">
-<span className="w-6 text-sm font-bold text-outline">02</span>
-<div className="w-10 h-10 rounded-full">
-<img className="w-full h-full object-cover rounded-full" data-alt="Headshot of a female trail runner" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8VCtoVlWwR9rSWvrCjg-HqHScinDhair1Ir2DVCJusPBkYTCIftTDbd2fXfY-kImd82mBRqfJYPyi6AdIUzrkC482cYAmxEoTHtABlD2FPK4kcpTKFrgxhwqO4n5n5ijC6DDXBsT7GtRIVVELRO49IKgXHY_oCafgb1Y9FG5s_Ba5iUmowxs_IQMSmVZrAXjCywblRins3mi-6Imyi-Ih-4uOCOfnZh2wDQJn6TaheXzxKd8guEiF-BukEaHo7tSZ6q230438SEo"/>
-</div>
-<div className="flex-1">
-<p className="text-sm font-bold">Elena Rodriguez</p>
-<p className="text-xs text-outline">19:15 min</p>
-</div>
-</div>
-
-<div className="flex items-center gap-4 bg-surface-container-lowest p-3 -mx-3 rounded-xl border border-secondary/10">
-<span className="w-6 text-sm font-bold text-secondary">14</span>
-<div className="w-10 h-10 rounded-full vitality-gradient flex items-center justify-center text-white font-bold">
-                            ME
+                <div className="relative aspect-[4/5] w-full px-5">
+                  <img className="w-full h-full object-cover rounded-[2rem] shadow-md" src={post.image} alt="Workout Post" />
+                  
+                  {/* Metric Overlays */}
+                  {post.metrics && (
+                    <div className="absolute top-10 left-10 flex flex-col gap-2">
+                      {post.metrics.map((m, i) => (
+                        <div key={i} className="bg-black/20 backdrop-blur-xl border border-white/10 px-4 py-2 rounded-2xl">
+                          <p className="text-[8px] uppercase font-bold tracking-widest text-white/60">{m.label}</p>
+                          <p className="text-white font-headline font-bold text-lg">{m.value}<span className="text-[10px] ml-0.5 opacity-80">{m.unit}</span></p>
                         </div>
-<div className="flex-1">
-<p className="text-sm font-bold">You</p>
-<p className="text-xs text-outline">22:08 min</p>
-</div>
-</div>
-</div>
-<button className="w-full text-center mt-6 text-sm font-bold text-secondary hover:underline transition-all">View All Rankings</button>
-</section>
+                      ))}
+                    </div>
+                  )}
 
-<section className="grid grid-cols-2 gap-4">
-<div className="bg-secondary-container p-6 rounded-lg text-on-secondary-container">
-<span className="material-symbols-outlined mb-2" data-icon="bolt">bolt</span>
-<p className="text-xs font-bold opacity-80 uppercase tracking-widest">Intensity</p>
-<p className="text-2xl font-headline font-extrabold">+12%</p>
-</div>
-<div className="bg-tertiary-container p-6 rounded-lg text-on-tertiary-container">
-<span className="material-symbols-outlined mb-2" data-icon="potted_plant">potted_plant</span>
-<p className="text-xs font-bold opacity-80 uppercase tracking-widest">Recovery</p>
-<p className="text-2xl font-headline font-extrabold">Optimal</p>
-</div>
-</section>
-</aside>
-</main>
+                  <div className="absolute bottom-10 right-10 vitality-gradient w-12 h-12 rounded-full flex items-center justify-center text-white shadow-xl shadow-secondary/30">
+                     <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: '"FILL" 1' }}>bolt</span>
+                  </div>
+                </div>
 
+                <div className="p-7">
+                  <p className="text-sm font-medium leading-relaxed text-on-surface-variant mb-6">{post.content}</p>
 
+                  <div className="flex items-center justify-between border-t border-outline-variant/10 pt-6">
+                    <div className="flex gap-8">
+                      <button onClick={() => toggleLike(post.id)} className="flex items-center gap-2 group transition-all active:scale-125">
+                        <span className={`material-symbols-outlined text-2xl transition-colors ${post.isLiked ? 'text-red-500' : 'text-outline group-hover:text-red-500'}`} style={{ fontVariationSettings: post.isLiked ? '"FILL" 1' : '"FILL" 0' }}>favorite</span>
+                        <span className="text-xs font-black tracking-tighter">{post.likes}</span>
+                      </button>
+                      <button className="flex items-center gap-2 group">
+                        <span className="material-symbols-outlined text-2xl text-outline group-hover:text-secondary transition-colors">chat_bubble</span>
+                        <span className="text-xs font-black tracking-tighter">{post.comments}</span>
+                      </button>
+                      <button className="flex items-center gap-2 group">
+                        <span className="material-symbols-outlined text-2xl text-outline group-hover:text-secondary transition-colors">share</span>
+                      </button>
+                    </div>
+                    <button className="text-outline hover:text-on-surface transition-colors active:scale-110">
+                      <span className="material-symbols-outlined text-2xl">bookmark</span>
+                    </button>
+                  </div>
+                </div>
+              </motion.article>
+            ))}
+          </AnimatePresence>
+        </div>
 
-    </>
+      </main>
+
+      <AnimatePresence>
+        {activeStoryIndex !== null && (
+          <StoryViewer
+            stories={STORIES_DATA}
+            initialIndex={activeStoryIndex}
+            onClose={() => setActiveStoryIndex(null)}
+          />
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getGeminiResponse, INITIAL_CHAT_PROMPT } from '../services/aiService';
+import { getGeminiResponse } from '../services/aiService';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Message {
@@ -32,14 +32,15 @@ export default function AIAssistant() {
     setInput('');
     setIsLoading(true);
 
-    // Format history for Gemini
-    const history = [
-      { role: 'user', parts: [{ text: INITIAL_CHAT_PROMPT }] },
-      ...newMessages.slice(-6).map(m => ({
-        role: m.role,
-        parts: [{ text: m.content }]
-      }))
-    ];
+    // Format history for Gemini (Ensure it starts with 'user' role)
+    let history = messages.map(m => ({
+      role: m.role,
+      parts: [{ text: m.content }]
+    }));
+
+    if (history.length > 0 && history[0].role === 'model') {
+      history = history.slice(1);
+    }
 
     const response = await getGeminiResponse(messageText, history);
     

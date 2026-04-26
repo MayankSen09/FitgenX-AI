@@ -14,6 +14,8 @@ import Analytics from './pages/Analytics.tsx';
 import TimerTool from './pages/TimerTool.tsx';
 import Challenges from './pages/Challenges.tsx';
 import Tracking from './pages/Tracking.tsx';
+import Settings from './pages/Settings.tsx';
+import Creature from './pages/Creature.tsx';
 import { ToastContainer } from './components/common/Toast.tsx';
 import BottomNav from './components/layout/BottomNav.tsx';
 
@@ -39,6 +41,8 @@ export default function App() {
           <Route path="/challenges" element={<Challenges />} />
           <Route path="/ai-coach" element={<AIAssistant />} />
           <Route path="/social" element={<SocialFeeds />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/creature" element={<Creature />} />
         </Routes>
       </AnimatePresence>
       {showNav && <BottomNav />}

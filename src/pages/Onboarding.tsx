@@ -159,20 +159,26 @@ export default function Onboarding() {
                 <div className="space-y-6">
                   {/* Name & College */}
                   <section className="space-y-4">
-                    <div className="bg-surface-container-lowest p-6 rounded-lg group hover:ring-2 ring-secondary/20 transition-all duration-300">
+                    <div className="bg-surface-container-lowest p-6 rounded-lg group hover:ring-2 ring-secondary/20 transition-all duration-300 relative overflow-hidden">
+                      <div className="absolute right-4 top-4 text-outline-variant/20 scale-150 pointer-events-none">
+                        <span className="material-symbols-outlined text-4xl">person_edit</span>
+                      </div>
                       <label className="font-label text-label-sm uppercase tracking-widest text-outline font-bold block mb-3">Your Name</label>
                       <input 
-                        className="w-full bg-transparent border-none p-0 font-headline text-2xl font-extrabold focus:ring-0 text-on-surface placeholder:text-outline-variant/40" 
+                        className="w-full bg-transparent border-none p-0 font-headline text-2xl font-extrabold focus:ring-0 text-on-surface placeholder:text-outline-variant/40 relative z-10" 
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="Enter your name"
                         type="text"
                       />
                     </div>
-                    <div className="bg-surface-container-lowest p-6 rounded-lg group hover:ring-2 ring-secondary/20 transition-all duration-300">
+                    <div className="bg-surface-container-lowest p-6 rounded-lg group hover:ring-2 ring-secondary/20 transition-all duration-300 relative overflow-hidden">
+                      <div className="absolute right-4 top-4 text-outline-variant/20 scale-150 pointer-events-none">
+                        <span className="material-symbols-outlined text-4xl">school</span>
+                      </div>
                       <label className="font-label text-label-sm uppercase tracking-widest text-outline font-bold block mb-3">College / University</label>
                       <input 
-                        className="w-full bg-transparent border-none p-0 font-headline text-xl font-bold focus:ring-0 text-on-surface placeholder:text-outline-variant/40" 
+                        className="w-full bg-transparent border-none p-0 font-headline text-xl font-bold focus:ring-0 text-on-surface placeholder:text-outline-variant/40 relative z-10" 
                         value={college}
                         onChange={(e) => setCollege(e.target.value)}
                         placeholder="e.g. MIT, Stanford"

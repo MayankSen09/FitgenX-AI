@@ -60,7 +60,12 @@ export default function Profile() {
             </div>
             <div>
               <h2 className="font-headline text-2xl font-extrabold tracking-tight">{displayName}</h2>
-              <p className="text-on-surface-variant text-sm font-medium">{email}</p>
+              <div className="space-y-0.5">
+                <p className="text-on-surface-variant text-sm font-medium">{email}</p>
+                {profile?.college && (
+                  <p className="text-primary text-[11px] uppercase tracking-wider font-bold">{profile.college}</p>
+                )}
+              </div>
             </div>
           </div>
         </section>
@@ -91,6 +96,20 @@ export default function Profile() {
             <div className="h-full vitality-gradient rounded-full transition-all duration-500" style={{ width: `${Math.min((stats.activeMinutes / 300) * 100, 100)}%` }}></div>
           </div>
           <p className="text-xs text-on-surface-variant">Goal: 300 minutes per week</p>
+        </section>
+
+        {/* Share Progress Card */}
+        <section className="bg-primary/5 p-6 rounded-3xl border border-primary/10 flex items-center justify-between group cursor-pointer active:scale-[0.98] transition-transform">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+              <span className="material-symbols-outlined">share</span>
+            </div>
+            <div>
+              <p className="font-headline font-extrabold text-sm text-primary uppercase tracking-tight">Share Your Progress</p>
+              <p className="text-xs text-on-surface-variant font-medium">Show your streak to the world!</p>
+            </div>
+          </div>
+          <span className="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">chevron_right</span>
         </section>
 
         {/* Workout History */}

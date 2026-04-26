@@ -47,7 +47,9 @@ export default function Dashboard() {
             )}
           </button>
           <div>
-            <p className="text-[0.6rem] font-bold uppercase tracking-widest text-secondary font-label leading-none">Aura Peak</p>
+            <p className="text-[0.6rem] font-bold uppercase tracking-widest text-secondary font-label leading-none">
+              {profile?.college || 'Aura Peak'}
+            </p>
             <h1 className="text-xl font-extrabold tracking-tighter text-zinc-900 dark:text-zinc-50 font-headline">Welcome, {userName}</h1>
           </div>
         </div>

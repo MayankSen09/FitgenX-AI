@@ -43,12 +43,12 @@ export default function Login() {
       <div className="absolute bottom-[-10%] left-[-10%] w-96 h-96 bg-secondary opacity-10 rounded-full blur-3xl pointer-events-none"></div>
 
       <div className="w-full max-w-sm z-10 flex flex-col">
-        <div className="mb-12 text-center stagger">
-          <div className="w-16 h-16 mx-auto bg-primary rounded-2xl flex items-center justify-center shadow-xl shadow-primary/20 mb-6">
-            <span className="material-symbols-outlined text-white text-3xl">fitness_center</span>
+        <div className="mb-12 text-center">
+          <div className="w-16 h-16 vitality-gradient rounded-3xl mx-auto mb-6 flex items-center justify-center shadow-lg shadow-primary/20 rotate-3">
+             <span className="material-symbols-outlined text-white text-3xl">bolt</span>
           </div>
-          <h1 className="font-headline text-4xl font-extrabold tracking-tighter text-on-surface mb-2">Aura FitGenX</h1>
-          <p className="text-on-surface-variant text-sm">Your AI-powered fitness companion</p>
+          <h1 className="font-headline text-4xl font-extrabold tracking-tighter text-on-surface mb-1">Aura FitGenX</h1>
+          <p className="text-secondary text-[10px] uppercase tracking-[0.2em] font-bold">by Aura Peak</p>
         </div>
 
         {error && (

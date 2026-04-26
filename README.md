@@ -20,8 +20,12 @@ An immersive, Instagram-inspired social feed designed for performance sharing.
 - **Metric Overlays**: Posts automatically feature floating heart rate, pace, and intensity data.
 - **Kinetic Design**: Smooth 60fps animations powered by Framer Motion.
 
-### 👤 Avatar Evolution
-Watch your digital Twin evolve. Aura uses high-fidelity 3D modeling to represent your current physiological level. As you gain XP, your avatar undergoes visual "evolutionary" shifts.
+### 🐾 Creature Companion (New!)
+The core of your fitness journey. Evolve your digital companion by completing workouts.
+- **7 Evolutionary Stages**: From an Egg to an Ancient Dragon.
+- **XP Progression**: Gain XP based on workout volume and intensity.
+- **Dynamic Feedback**: Your creature grows and glows as you hit your weekly goals.
+- **Configurable Hub**: Access your creature instantly from the smart navigation center button.
 
 ---
 

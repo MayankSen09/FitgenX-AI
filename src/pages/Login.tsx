@@ -47,8 +47,8 @@ export default function Login() {
           <div className="w-16 h-16 vitality-gradient rounded-3xl mx-auto mb-6 flex items-center justify-center shadow-lg shadow-primary/20 rotate-3">
              <span className="material-symbols-outlined text-white text-3xl">bolt</span>
           </div>
-          <h1 className="font-headline text-4xl font-extrabold tracking-tighter text-on-surface mb-1">Aura FitGenX</h1>
-          <p className="text-secondary text-[10px] uppercase tracking-[0.2em] font-bold">by Aura Peak</p>
+          <h1 className="font-headline text-4xl font-extrabold tracking-tighter text-on-surface mb-1">FitGenX</h1>
+          <p className="text-secondary text-[10px] uppercase tracking-[0.2em] font-bold">The Future of Fitness</p>
         </div>
 
         {error && (

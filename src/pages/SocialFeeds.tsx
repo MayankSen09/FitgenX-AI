@@ -151,7 +151,7 @@ export default function SocialFeeds() {
     <div className="bg-bg-primary min-h-screen pb-32">
       <header className="fixed top-0 w-full max-w-[430px] left-1/2 -translate-x-1/2 z-50 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl flex justify-between items-center px-6 py-4 border-b border-outline-variant/10">
         <div className="flex items-center gap-3">
-          <h1 className="text-xl font-bold tracking-tighter text-zinc-900 dark:text-zinc-50 font-headline">Aura Community</h1>
+          <h1 className="text-xl font-bold tracking-tighter text-zinc-900 dark:text-zinc-50 font-headline">Community</h1>
         </div>
         <div className="flex items-center gap-4">
           <button className="material-symbols-outlined text-zinc-900 dark:text-zinc-50 hover:opacity-80 transition-opacity active:scale-95 duration-200 p-2 bg-surface-container-low rounded-full">notifications</button>

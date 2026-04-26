@@ -1,18 +1,18 @@
-# ⚡ Aura FitGenX
+# ⚡ FitGenX
 
-![Aura FitGenX Hero Banner](public/assets/banner.png)
+![FitGenX Hero Banner](public/assets/banner.png)
 
 > **The Future of Human Performance.**  
 > A high-performance athletic intelligence platform optimized for elite performance.
 
-Aura FitGenX is a premium fitness ecosystem designed for the modern athlete. It combines photorealistic 3D avatar evolution, AI-driven coaching, and an immersive editorial social experience into a single seamless interface.
+FitGenX is a premium fitness ecosystem designed for the modern athlete. It combines creature companion evolution, AI-driven coaching, and an immersive editorial social experience into a single seamless interface.
 
 ---
 
 ## ✨ Core Pillars
 
-### 🤖 Aura AI Coach
-Your advanced intelligence core provides data-driven, professional coaching. From powerlifting optimization to cardiovascular peak-performance, Aura analyzes your intent and provides real-time strategic feedback.
+### 🤖 AI Coach
+Your advanced intelligence core provides data-driven, professional coaching. From powerlifting optimization to cardiovascular peak-performance, FitGenX analyzes your intent and provides real-time strategic feedback.
 
 ### 📱 Kinetic Editorial Social
 An immersive, Instagram-inspired social feed designed for performance sharing.
@@ -79,7 +79,7 @@ Ensure you add `VITE_GEMINI_API_KEY` to your Vercel Project Settings under "Envi
 ---
 
 ## 🎨 Design System
-Aura follows the **Kinetic Editorial** design language—a synthesis of high-end fashion editorial layouts and futuristic data visualization.
+FitGenX follows the **Kinetic Editorial** design language—a synthesis of high-end fashion editorial layouts and futuristic data visualization.
 
 - **Primary Colors**: Deep Zincs, Galactic Whites
 - **Accents**: Vitality Teal, Performance Blue

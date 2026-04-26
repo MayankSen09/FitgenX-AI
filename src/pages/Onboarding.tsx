@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAppStore } from '../store/useAppStore';
 
 export default function Onboarding() {
   const navigate = useNavigate();
+  const { setProfile } = useAppStore();
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState(0);
   
   // Form State
+  const [name, setName] = useState('');
+  const [college, setCollege] = useState('');
   const [gender, setGender] = useState('Male');
   const [focus, setFocus] = useState('Gain muscle');
   const [level, setLevel] = useState('Intermediate');
@@ -43,6 +47,10 @@ export default function Onboarding() {
   };
 
   const startGeneration = () => {
+    // Save profile to store
+    setProfile({ name, college, age, gender, height, weight, focus, level, preferences });
+    // Mark onboarding as complete
+    localStorage.setItem('fitgenx-onboarding-complete', 'true');
     setStep(4);
     setIsGenerating(true);
   };
@@ -148,13 +156,37 @@ export default function Onboarding() {
               className="w-full"
             >
               {step === 1 && (
-                <div className="space-y-12">
+                <div className="space-y-6">
+                  {/* Name & College */}
+                  <section className="space-y-4">
+                    <div className="bg-surface-container-lowest p-6 rounded-lg group hover:ring-2 ring-secondary/20 transition-all duration-300">
+                      <label className="font-label text-label-sm uppercase tracking-widest text-outline font-bold block mb-3">Your Name</label>
+                      <input 
+                        className="w-full bg-transparent border-none p-0 font-headline text-2xl font-extrabold focus:ring-0 text-on-surface placeholder:text-outline-variant/40" 
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Enter your name"
+                        type="text"
+                      />
+                    </div>
+                    <div className="bg-surface-container-lowest p-6 rounded-lg group hover:ring-2 ring-secondary/20 transition-all duration-300">
+                      <label className="font-label text-label-sm uppercase tracking-widest text-outline font-bold block mb-3">College / University</label>
+                      <input 
+                        className="w-full bg-transparent border-none p-0 font-headline text-xl font-bold focus:ring-0 text-on-surface placeholder:text-outline-variant/40" 
+                        value={college}
+                        onChange={(e) => setCollege(e.target.value)}
+                        placeholder="e.g. MIT, Stanford"
+                        type="text"
+                      />
+                    </div>
+                  </section>
+                  {/* Age & Gender */}
                   <section className="grid grid-cols-2 gap-4">
-                    <div className="bg-surface-container-lowest p-8 rounded-lg flex flex-col justify-between h-44 group hover:ring-2 ring-secondary/20 transition-all duration-300">
+                    <div className="bg-surface-container-lowest p-6 rounded-lg flex flex-col justify-between h-36 group hover:ring-2 ring-secondary/20 transition-all duration-300">
                       <label className="font-label text-label-sm uppercase tracking-widest text-outline font-bold">Age</label>
                       <div className="flex items-baseline gap-2">
                         <input 
-                          className="w-full bg-transparent border-none p-0 font-headline text-5xl font-extrabold focus:ring-0 text-on-surface" 
+                          className="w-full bg-transparent border-none p-0 font-headline text-4xl font-extrabold focus:ring-0 text-on-surface" 
                           value={age}
                           onChange={(e) => setAge(e.target.value)}
                           type="number"
@@ -162,7 +194,7 @@ export default function Onboarding() {
                         <span className="text-outline font-medium">yrs</span>
                       </div>
                     </div>
-                    <div className="bg-surface-container-lowest p-8 rounded-lg flex flex-col justify-between h-44 group hover:ring-2 ring-secondary/20 transition-all duration-300">
+                    <div className="bg-surface-container-lowest p-6 rounded-lg flex flex-col justify-between h-36 group hover:ring-2 ring-secondary/20 transition-all duration-300">
                       <label className="font-label text-label-sm uppercase tracking-widest text-outline font-bold">Gender</label>
                       <div className="flex gap-2">
                         <button 
@@ -175,11 +207,6 @@ export default function Onboarding() {
                         >Female</button>
                       </div>
                     </div>
-                  </section>
-                  <section className="bg-surface-container-lowest p-8 rounded-lg border border-outline-variant/10">
-                     <p className="text-sm text-on-surface-variant leading-relaxed">
-                        Welcome, athlete. Let's build your profile to optimize your <span className="text-secondary font-bold">biological performance curve</span>.
-                     </p>
                   </section>
                 </div>
               )}

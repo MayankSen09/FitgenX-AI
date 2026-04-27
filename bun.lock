@@ -15,7 +15,7 @@
         "react-dom": "^19.0.0",
         "react-leaflet": "^5.0.0",
         "react-router-dom": "^7.1.0",
-        "zustand": "^5.0.12",
+        "zustand": "^5.0.12"
       },
       "devDependencies": {
         "@types/leaflet": "^1.9.21",
@@ -27,9 +27,9 @@
         "postcss": "^8.5.8",
         "tailwindcss": "^3.4.19",
         "typescript": "~5.7.2",
-        "vite": "^6.0.5",
-      },
-    },
+        "vite": "^6.0.5"
+      }
+    }
   },
   "packages": {
     "@alloc/quick-lru": ["@alloc/quick-lru@5.2.0", "", {}, "sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw=="],
@@ -918,6 +918,6 @@
 
     "tsx/esbuild/@esbuild/win32-x64": ["@esbuild/win32-x64@0.27.0", "", { "os": "win32", "cpu": "x64" }, "sha512-aIitBcjQeyOhMTImhLZmtxfdOcuNRpwlPNmlFKPcHQYPhEssw75Cl1TSXJXpMkzaua9FUetx/4OQKq7eJul5Cg=="],
 
-    "@ts-morph/common/minimatch/brace-expansion/balanced-match": ["balanced-match@1.0.2", "", {}, "sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw=="],
+    "@ts-morph/common/minimatch/brace-expansion/balanced-match": ["balanced-match@1.0.2", "", {}, "sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw=="]
   }
 }

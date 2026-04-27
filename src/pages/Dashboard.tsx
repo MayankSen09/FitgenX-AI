@@ -9,7 +9,7 @@ export default function Dashboard() {
   const { user } = useAuth();
   const { stats, getStreak, workoutHistory, profile } = useAppStore();
 
-  const userName = profile?.name?.split(' ')[0] || user?.displayName?.split(' ')[0] || 'Athlete';
+  const userName = profile?.name?.split(' ')[0] || user?.displayName?.split(' ')[0] || 'Champion';
   const userPhoto = user?.photoURL || '';
   const streak = getStreak();
   const todaysWorkouts = getTodaysWorkouts();

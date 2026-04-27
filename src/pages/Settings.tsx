@@ -79,7 +79,7 @@ export default function Settings() {
           <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
             <div className="p-4 flex justify-between items-center border-b border-zinc-100 dark:border-zinc-800">
               <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">App Version</span>
-              <span className="text-sm text-zinc-500">1.0.0</span>
+              <span className="text-sm text-zinc-500">1.0.1</span>
             </div>
             <div className="p-4 flex justify-between items-center border-b border-zinc-100 dark:border-zinc-800">
               <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Build</span>

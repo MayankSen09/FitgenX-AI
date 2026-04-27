@@ -10,6 +10,7 @@ export interface Exercise {
   instructions: string[];
   image: string;
   icon: string;
+  videoUrl?: string;
 }
 
 // Verified working Unsplash images for each category
@@ -64,6 +65,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.bench,
     icon: 'fitness_center',
+    videoUrl: 'https://www.youtube.com/embed/rT7DgCr-3pg?autoplay=0&loop=1&playlist=rT7DgCr-3pg',
   },
   {
     id: 'incline-dumbbell-press',
@@ -82,6 +84,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.gym1,
     icon: 'fitness_center',
+    videoUrl: 'https://www.youtube.com/embed/8iPEnn-ltC8?autoplay=0&loop=1&playlist=8iPEnn-ltC8',
   },
   {
     id: 'dumbbell-flys',
@@ -100,6 +103,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.chest,
     icon: 'fitness_center',
+    videoUrl: 'https://www.youtube.com/embed/eozdVDA78K0?autoplay=0&loop=1'
   },
   {
     id: 'cable-crossover',
@@ -118,6 +122,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.gym3,
     icon: 'fitness_center',
+    videoUrl: 'https://www.youtube.com/embed/taI4XduLpTk?autoplay=0&loop=1'
   },
   {
     id: 'push-ups',
@@ -136,6 +141,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.pushup,
     icon: 'fitness_center',
+    videoUrl: 'https://www.youtube.com/embed/IODxDxX7oi4?autoplay=0&loop=1'
   },
 
   // ────── BACK ──────
@@ -156,6 +162,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.back,
     icon: 'fitness_center',
+    videoUrl: 'https://www.youtube.com/embed/G8l_8chR5BE?autoplay=0&loop=1'
   },
   {
     id: 'lat-pulldown',
@@ -174,6 +181,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.gym2,
     icon: 'fitness_center',
+    videoUrl: 'https://www.youtube.com/embed/CAwf7n6Luuc?autoplay=0&loop=1'
   },
   {
     id: 'seated-cable-row',
@@ -192,6 +200,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.row,
     icon: 'fitness_center',
+    videoUrl: 'https://www.youtube.com/embed/GZbfZ033f74?autoplay=0&loop=1'
   },
   {
     id: 'pull-ups',
@@ -210,6 +219,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.pullup,
     icon: 'fitness_center',
+    videoUrl: 'https://www.youtube.com/embed/eGo4IYcbEPI?autoplay=0&loop=1'
   },
   {
     id: 'dumbbell-row',
@@ -228,6 +238,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.pullup,
     icon: 'fitness_center',
+    videoUrl: 'https://www.youtube.com/embed/pYcpY20QaE8?autoplay=0&loop=1'
   },
 
   // ────── SHOULDERS ──────
@@ -248,6 +259,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.shoulder,
     icon: 'fitness_center',
+    videoUrl: 'https://www.youtube.com/embed/QAQ64hK4Xxs?autoplay=0&loop=1&playlist=QAQ64hK4Xxs',
   },
   {
     id: 'lateral-raises',
@@ -266,6 +278,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.lateral,
     icon: 'fitness_center',
+    videoUrl: 'https://www.youtube.com/embed/3VcKaXpzqRo?autoplay=0&loop=1&playlist=3VcKaXpzqRo',
   },
   {
     id: 'face-pulls',
@@ -284,6 +297,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.gym3,
     icon: 'fitness_center',
+    videoUrl: 'https://www.youtube.com/embed/rep-qVOkqgk?autoplay=0&loop=1'
   },
   {
     id: 'arnold-press',
@@ -302,6 +316,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.shoulder,
     icon: 'fitness_center',
+    videoUrl: 'https://www.youtube.com/embed/6Z15_WdXmVw?autoplay=0&loop=1'
   },
 
   // ────── LEGS ──────
@@ -322,6 +337,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.squat,
     icon: 'directions_run',
+    videoUrl: 'https://www.youtube.com/embed/gcNh17Ckjgg?autoplay=0&loop=1'
   },
   {
     id: 'romanian-deadlift',
@@ -340,6 +356,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.deadlift,
     icon: 'directions_run',
+    videoUrl: 'https://www.youtube.com/embed/JCXUYuzwNrM?autoplay=0&loop=1'
   },
   {
     id: 'leg-press',
@@ -358,6 +375,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.lunge,
     icon: 'directions_run',
+    videoUrl: 'https://www.youtube.com/embed/IZxyjW7OSvc?autoplay=0&loop=1'
   },
   {
     id: 'walking-lunges',
@@ -376,6 +394,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.lunge,
     icon: 'directions_run',
+    videoUrl: 'https://www.youtube.com/embed/L8fvypPrzzs?autoplay=0&loop=1'
   },
   {
     id: 'leg-curl',
@@ -394,6 +413,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.gym2,
     icon: 'directions_run',
+    videoUrl: 'https://www.youtube.com/embed/1Tq3QdYUuHs?autoplay=0&loop=1'
   },
   {
     id: 'calf-raises',
@@ -412,6 +432,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.core,
     icon: 'directions_run',
+    videoUrl: 'https://www.youtube.com/embed/gwLzBJYoWlI?autoplay=0&loop=1'
   },
 
   // ────── ARMS ──────
@@ -432,6 +453,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.curl,
     icon: 'exercise',
+    videoUrl: 'https://www.youtube.com/embed/kwG2ipFRgfo?autoplay=0&loop=1'
   },
   {
     id: 'hammer-curls',
@@ -450,6 +472,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.curl,
     icon: 'exercise',
+    videoUrl: 'https://www.youtube.com/embed/zC3nLlEvin4?autoplay=0&loop=1'
   },
   {
     id: 'tricep-dips',
@@ -468,6 +491,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.tricep,
     icon: 'exercise',
+    videoUrl: 'https://www.youtube.com/embed/2z8JmcrW-As?autoplay=0&loop=1'
   },
   {
     id: 'overhead-tricep-extension',
@@ -486,6 +510,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.tricep,
     icon: 'exercise',
+    videoUrl: 'https://www.youtube.com/embed/nRiJVZDpdL0?autoplay=0&loop=1'
   },
   {
     id: 'rope-pushdown',
@@ -504,6 +529,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.gym3,
     icon: 'exercise',
+    videoUrl: 'https://www.youtube.com/embed/2-LAMcpzODU?autoplay=0&loop=1'
   },
 
   // ────── CORE ──────
@@ -524,6 +550,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.plank,
     icon: 'accessibility_new',
+    videoUrl: 'https://www.youtube.com/embed/ASdvN_XEl_c?autoplay=0&loop=1'
   },
   {
     id: 'hanging-leg-raise',
@@ -542,6 +569,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.pullup,
     icon: 'accessibility_new',
+    videoUrl: 'https://www.youtube.com/embed/Pr1ieGZ5atk?autoplay=0&loop=1'
   },
   {
     id: 'russian-twists',
@@ -560,6 +588,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.core,
     icon: 'accessibility_new',
+    videoUrl: 'https://www.youtube.com/embed/wkD8rjkodUI?autoplay=0&loop=1'
   },
   {
     id: 'bicycle-crunches',
@@ -578,6 +607,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.pushup,
     icon: 'accessibility_new',
+    videoUrl: 'https://www.youtube.com/embed/9FGilxCbdz8?autoplay=0&loop=1'
   },
   {
     id: 'dead-bugs',
@@ -596,6 +626,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.plank,
     icon: 'accessibility_new',
+    videoUrl: 'https://www.youtube.com/embed/4XLEnwUr1d8?autoplay=0&loop=1'
   },
 
   // ────── CARDIO / FULL BODY ──────
@@ -616,6 +647,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.cardio,
     icon: 'directions_run',
+    videoUrl: 'https://www.youtube.com/embed/dZgVxmf6jkA?autoplay=0&loop=1'
   },
   {
     id: 'mountain-climbers',
@@ -634,6 +666,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.hiit,
     icon: 'directions_run',
+    videoUrl: 'https://www.youtube.com/embed/nmwgirgXLYM?autoplay=0&loop=1'
   },
   {
     id: 'jump-squats',
@@ -652,6 +685,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.squat,
     icon: 'directions_run',
+    videoUrl: 'https://www.youtube.com/embed/QQmXQ7O0E2s?autoplay=0&loop=1'
   },
   {
     id: 'kettlebell-swings',
@@ -670,6 +704,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.kettlebell,
     icon: 'directions_run',
+    videoUrl: 'https://www.youtube.com/embed/YSxHifyI6s8?autoplay=0&loop=1'
   },
   {
     id: 'box-jumps',
@@ -688,6 +723,7 @@ export const EXERCISES: Exercise[] = [
     ],
     image: IMG.cardio,
     icon: 'directions_run',
+    videoUrl: 'https://www.youtube.com/embed/52r_Ul5k03g?autoplay=0&loop=1'
   },
 ];
 

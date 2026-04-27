@@ -33,7 +33,7 @@ export default function WorkoutPlans() {
           <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
             <span className="material-symbols-outlined text-primary text-xl">fitness_center</span>
           </div>
-          <h1 className="text-xl font-bold tracking-tighter text-zinc-900 dark:text-zinc-50 font-headline">Workouts</h1>
+          <h1 className="text-xl font-bold tracking-tighter text-zinc-900 dark:text-zinc-50 font-headline">Workout Plans</h1>
         </div>
         <button onClick={() => navigate('/settings')} className="material-symbols-outlined text-zinc-500 hover:opacity-80 transition-opacity active:scale-95 duration-200">settings</button>
       </header>

@@ -46,7 +46,7 @@ export default function Challenges() {
         <button onClick={() => navigate(-1)} className="p-3 bg-white rounded-full text-text-secondary shadow-sm">
           <ArrowLeft size={24} />
         </button>
-        <h2 className="headline-md text-primary italic uppercase tracking-tighter">Arena Challenges</h2>
+        <h2 className="headline-md text-primary italic uppercase tracking-tighter">Community Challenges</h2>
         <div className="w-12"></div>
       </div>
 

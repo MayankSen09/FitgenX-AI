@@ -129,15 +129,25 @@ export default function WorkoutPlayer() {
 
       {/* Main Player Area */}
       <div className="flex-1 flex flex-col items-center overflow-y-auto">
-         <div className="relative w-full aspect-[4/5] max-h-[50vh] bg-bg-elevated rounded-[3rem] overflow-hidden shadow-2xl mb-8 group mx-4">
-            <img
-               src={currentEx.image}
-               className="w-full h-full object-cover transition-transform duration-[2s] group-hover:scale-110"
-               alt={currentEx.name}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+         <div className="relative w-[calc(100%-2rem)] shrink-0 aspect-[4/5] max-h-[50vh] bg-bg-elevated rounded-[3rem] overflow-hidden shadow-2xl mb-8 group mx-auto">
+            {currentEx.videoUrl ? (
+               <iframe
+                 className="absolute inset-0 w-full h-full"
+                 src={currentEx.videoUrl}
+                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                 allowFullScreen
+                 style={{ border: 'none' }}
+               />
+            ) : (
+               <img
+                  src={currentEx.image}
+                  className="w-full h-full object-cover transition-transform duration-[2s] group-hover:scale-110"
+                  alt={currentEx.name}
+               />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
 
-            <div className="absolute bottom-8 left-8 right-8 flex flex-col items-start">
+            <div className="absolute bottom-8 left-8 right-8 flex flex-col items-start pointer-events-none">
                <span className="bg-secondary px-4 py-1.5 rounded-full text-[10px] font-bold text-white uppercase tracking-widest mb-3">
                  Exercise {currentExercise + 1} of {exercises.length}
                </span>

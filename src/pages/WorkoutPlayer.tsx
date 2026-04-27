@@ -19,7 +19,6 @@ export default function WorkoutPlayer() {
   const [currentSet, setCurrentSet] = useState(1);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [completedExercises, setCompletedExercises] = useState<Set<number>>(new Set());
-  const [bpm, setBpm] = useState(125);
   const startTimeRef = useRef(Date.now());
 
   useEffect(() => {
@@ -27,8 +26,6 @@ export default function WorkoutPlayer() {
     if (isPlaying) {
       timer = setInterval(() => {
         setElapsedSeconds((prev) => prev + 1);
-        // Simulate heart rate based on workout intensity
-        setBpm(120 + Math.floor(Math.random() * 30));
       }, 1000);
     }
     return () => clearInterval(timer);
@@ -153,13 +150,6 @@ export default function WorkoutPlayer() {
                </span>
                <h1 className="text-3xl font-extrabold text-white mb-1 leading-none">{currentEx.name}</h1>
                <p className="text-white/60 font-medium text-sm">{currentEx.muscle} • {currentEx.equipment}</p>
-            </div>
-
-            <div className="absolute top-6 right-6">
-               <div className="w-16 h-16 rounded-2xl bg-black/40 backdrop-blur-md flex flex-col items-center justify-center p-3 border border-white/10">
-                  <span className="text-[10px] font-bold text-white/60 uppercase tracking-tighter mb-0.5">BPM</span>
-                  <span className="text-xl font-black text-rose-500 tabular-nums">{bpm}</span>
-               </div>
             </div>
          </div>
 

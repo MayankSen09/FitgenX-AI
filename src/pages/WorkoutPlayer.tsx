@@ -233,7 +233,7 @@ export default function WorkoutPlayer() {
              onClick={handleFinish}
              className="w-full py-4 text-zinc-500 font-bold hover:text-primary transition-colors text-sm"
            >
-             End Session Early
+             End Workout Early
            </button>
          </div>
       </div>

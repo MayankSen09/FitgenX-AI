@@ -11,7 +11,7 @@ export default function Analytics() {
 <div className="w-10 h-10 rounded-full overflow-hidden bg-surface-container-high">
 <img alt="User profile" data-alt="Close-up portrait of a professional female athlete with a determined expression, natural lighting, soft outdoor background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBgfoBemLwZbeIYHlbXnjyKMHqE-ACtroJgVrq_GF7hm4KHR133OKXb248APnZZ-gI58GLJeRu6IqOObfMr4Okxdm5aydVBNy24qQyw2V4ziy-c300gBKnq7ZHLsjCDHnDROsKfjeytLXlMI-ZqNBlqcFDAf_DQXhIXUPhe3gfUk7ekxuXTtQ-9bRYIMSjoIO533rIrglayQ5rQOwnzUjZZ-xN4bQGoOrPjgGbQC_4XowJ-VDzELItj7cWPtPOFOe5KpyKb2zKvMAw"/>
 </div>
-<span className="text-xl font-bold tracking-tighter text-zinc-900 dark:text-zinc-50 font-headline">Goals</span>
+<span className="text-xl font-bold tracking-tighter text-zinc-900 dark:text-zinc-50 font-headline">Analytics</span>
 </div>
 <button className="w-10 h-10 flex items-center justify-center rounded-full text-zinc-900 dark:text-zinc-50 hover:opacity-80 transition-opacity">
 <span className="material-symbols-outlined" data-icon="notifications">notifications</span>

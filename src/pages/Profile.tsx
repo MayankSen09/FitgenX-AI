@@ -8,7 +8,7 @@ export default function Profile() {
   const { user, signOut } = useAuth();
   const { stats, workoutHistory, getStreak, profile } = useAppStore();
 
-  const displayName = profile?.name || user?.displayName || 'Guest Athlete';
+  const displayName = profile?.name || user?.displayName || 'New Athlete';
   const photoURL = user?.photoURL || '';
   const email = user?.email || 'guest@fitgenx.app';
   const streak = getStreak();

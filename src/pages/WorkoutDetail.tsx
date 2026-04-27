@@ -14,7 +14,7 @@ export default function WorkoutDetail() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-bg-primary">
         <div className="text-center">
-          <p className="text-zinc-500 mb-4">Workout plan not found.</p>
+          <p className="text-zinc-500 mb-4">Workout plan could not be found.</p>
           <button onClick={() => navigate('/workouts')} className="text-primary font-bold">← Back to Workouts</button>
         </div>
       </div>

@@ -48,7 +48,7 @@ export default function Login() {
              <span className="material-symbols-outlined text-white text-3xl">bolt</span>
           </div>
           <h1 className="font-headline text-4xl font-extrabold tracking-tighter text-on-surface mb-1">FitGenX</h1>
-          <p className="text-secondary text-[10px] uppercase tracking-[0.2em] font-bold">The Future of Fitness</p>
+          <p className="text-secondary text-[10px] uppercase tracking-[0.2em] font-bold">Your Future in Fitness</p>
         </div>
 
         {error && (

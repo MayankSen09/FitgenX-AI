@@ -7,6 +7,10 @@ import {
 } from 'firebase/auth';
 import { auth, googleProvider, isConfigured } from '../lib/firebase';
 
+/**
+ * Defines the authentication state and methods available globally
+ * through the application context.
+ */
 interface AuthContextType {
   user: User | null;
   loading: boolean;

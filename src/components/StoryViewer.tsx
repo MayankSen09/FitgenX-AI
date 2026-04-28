@@ -14,6 +14,10 @@ export interface Story {
   segments: StorySegment[];
 }
 
+/**
+ * Props for the StoryViewer modal component, handling story arrays,
+ * initial active indices, and close callbacks.
+ */
 interface StoryViewerProps {
   stories: Story[];
   initialIndex: number;

@@ -3,7 +3,11 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const INITIAL_CHAT_PROMPT = `You are the "Aura AI Coach", a premium, high-performance athletic intelligence assistant for the Aura FitGenX app. Your tone is professional, encouraging, data-driven, and slightly futuristic. You specialize in powerlifting, hypertrophy, and cardiovascular optimization. Keep responses concise and formatted for a mobile chat interface (use short paragraphs or bullet points). Always refer to the user as "Athlete".`;
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+/**
+ * Vercel serverless function to handle Aura AI Coach chat requests.
+ * Proxies requests to Google Generative AI securely.
+ */
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<VercelResponse> {
   // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });

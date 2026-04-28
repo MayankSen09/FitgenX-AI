@@ -1,3 +1,7 @@
+/**
+ * Represents a specific physical exercise, including details about
+ * target muscles, difficulty, suggested sets/reps, and visual aids.
+ */
 export interface Exercise {
   id: string;
   name: string;

@@ -3,6 +3,7 @@
   "description": "A modern fitness tracking and social application",
   "private": true,
   "version": "1.0.0",
+  "author": "FitGenX Team",
   "type": "module",
   "scripts": {
     "dev:frontend": "vite",

@@ -4,6 +4,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { useAppStore } from '../store/useAppStore';
 import { getTodaysWorkouts } from '../data/workoutPlans';
 
+/**
+ * Main dashboard component showing user stats, streaks, and today's workout plans.
+ */
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();

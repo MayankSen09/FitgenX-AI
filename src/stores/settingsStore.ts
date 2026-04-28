@@ -18,6 +18,10 @@ export const QUICK_ACTION_OPTIONS: QuickActionOption[] = [
   { label: 'Profile', icon: 'person', path: '/profile' },
 ];
 
+/**
+ * Global state shape for application-wide user settings,
+ * synchronized with local storage.
+ */
 interface SettingsState {
   quickActionPath: string;
   setQuickActionPath: (path: string) => void;

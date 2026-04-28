@@ -5,6 +5,10 @@ import 'leaflet/dist/leaflet.css';
 // Default fallback center (user's approximate location or a neutral point)
 const DEFAULT_CENTER: [number, number] = [20.5937, 78.9629]; // India center
 
+/**
+ * Props for the LiveMap component, allowing parent components
+ * to subscribe to real-time location and telemetry updates.
+ */
 interface LiveMapProps {
   onLocationUpdate?: (data: {
     positions: [number, number][];

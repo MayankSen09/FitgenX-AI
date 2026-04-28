@@ -2,6 +2,10 @@ import { useNavigate } from 'react-router-dom';
 import BottomNav from '../components/layout/BottomNav';
 import { useSettingsStore, QUICK_ACTION_OPTIONS } from '../stores/settingsStore';
 
+/**
+ * Settings component allowing users to customize app preferences,
+ * such as the Quick Action floating button destination.
+ */
 export default function Settings() {
   const navigate = useNavigate();
   const { quickActionPath, setQuickActionPath } = useSettingsStore();

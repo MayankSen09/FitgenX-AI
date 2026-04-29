@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getGeminiResponse } from '../services/aiService';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAppStore } from '../store/useAppStore';
 
 interface Message {
   role: 'user' | 'model';
@@ -10,12 +11,27 @@ interface Message {
 
 export default function AIAssistant() {
   const navigate = useNavigate();
-  const [messages, setMessages] = useState<Message[]>([
-    { role: 'model', content: "Based on your sleep quality last night (84%) and recovery score, today is an ideal day for a high-intensity threshold run. Should I update your targets?" }
-  ]);
+  const { profile } = useAppStore();
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [mode, setMode] = useState<'chat' | 'plan'>('chat');
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (profile && messages.length === 0) {
+      setMessages([
+        { 
+          role: 'model', 
+          content: `Hello ${profile.name}! I'm ready to help you with your fitness journey. Would you like to chat about your progress, or should we create a new personalized plan?` 
+        }
+      ]);
+    } else if (!profile && messages.length === 0) {
+      setMessages([
+        { role: 'model', content: "Hello! I'm your FitGenX AI Coach. Please complete your profile so I can create a personalized plan for you." }
+      ]);
+    }
+  }, [profile, messages.length]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -38,11 +54,14 @@ export default function AIAssistant() {
       parts: [{ text: m.content }]
     }));
 
-    if (history.length > 0 && history[0].role === 'model') {
-      history = history.slice(1);
+    let contextPrompt = messageText;
+    if (mode === 'plan') {
+       contextPrompt = `GENERATE A STRUCTURED WORKOUT PLAN. User Profile: Name: ${profile?.name}, Age: ${profile?.age}, Goal: ${profile?.focus}, Level: ${profile?.level}, Activity: ${profile?.activityLevel}, Frequency: ${profile?.workoutFrequency}. \n\nUser Request: ${messageText}. Please provide a detailed week-by-week or day-by-day plan with exercises, sets, and reps.`;
+    } else if (messages.length === 1 && profile) {
+      contextPrompt = `User Profile: Name: ${profile.name}, Age: ${profile.age}, Gender: ${profile.gender}, Height: ${profile.height}cm, Weight: ${profile.weight}kg, Goal: ${profile.focus}, Level: ${profile.level}, Preferences: ${profile.preferences.join(', ')}, Activity: ${profile.activityLevel}, History: ${profile.fitnessHistory}, Frequency: ${profile.workoutFrequency} days/week, Medical: ${profile.medicalConditions}. \n\nUser Message: ${messageText}`;
     }
 
-    const response = await getGeminiResponse(messageText, history);
+    const response = await getGeminiResponse(contextPrompt, history);
     
     setMessages(prev => [...prev, { role: 'model', content: response }]);
     setIsLoading(false);
@@ -51,29 +70,49 @@ export default function AIAssistant() {
   return (
     <>
       {/* ─── Header ─── */}
-      <header className="fixed top-0 w-full max-w-[430px] left-1/2 -translate-x-1/2 z-50 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl flex justify-between items-center px-6 py-4">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate('/profile')}
-            className="w-10 h-10 rounded-full overflow-hidden bg-surface-container-high transition-transform active:scale-95 cursor-pointer border-none p-0 outline-none"
-          >
-            <img
-              alt="User Profile Avatar"
-              className="w-full h-full object-cover"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNrzwzHCl7acrq1jEp7xQZwlilFbooGXO4CC3YRVZRFPz1v0D4KG_-8ndv8dN2ypKbj5mhkfHGtO5BlLA2X5rpMdcb3qL7CESHcXBohBwncJos50wqVNNSBTEWeBKZmFRA4SWpfd5ucTk0oCZtx3OGojJa2XsNre9yulpoe8fClnRiTE2saOMYFAtOOEK7r_CZrft8jiWolYdRjxkDCXnj9K-eKX5Bk7zTQwykX7s5AriWiRca8vwydKFaMDGPH6S2JRDT6kb_C2Q"
-            />
+      <header className="fixed top-0 w-full max-w-[430px] left-1/2 -translate-x-1/2 z-50 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl flex flex-col items-center px-6 pt-4 pb-2">
+        <div className="w-full flex justify-between items-center mb-3">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate('/profile')}
+              className="w-10 h-10 rounded-full overflow-hidden bg-surface-container-high transition-transform active:scale-95 cursor-pointer border-none p-0 outline-none"
+            >
+              <img
+                alt="User Profile Avatar"
+                className="w-full h-full object-cover"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNrzwzHCl7acrq1jEp7xQZwlilFbooGXO4CC3YRVZRFPz1v0D4KG_-8ndv8dN2ypKbj5mhkfHGtO5BlLA2X5rpMdcb3qL7CESHcXBohBwncJos50wqVNNSBTEWeBKZmFRA4SWpfd5ucTk0oCZtx3OGojJa2XsNre9yulpoe8fClnRiTE2saOMYFAtOOEK7r_CZrft8jiWolYdRjxkDCXnj9K-eKX5Bk7zTQwykX7s5AriWiRca8vwydKFaMDGPH6S2JRDT6kb_C2Q"
+              />
+            </button>
+            <h1 className="text-xl font-bold tracking-tighter text-zinc-900 dark:text-zinc-50 font-headline">
+              Coach
+            </h1>
+          </div>
+          <button className="material-symbols-outlined text-zinc-900 dark:text-zinc-50 hover:opacity-80 transition-opacity active:scale-95 duration-200 p-2 bg-surface-container-low rounded-full">
+            notifications
           </button>
-          <h1 className="text-xl font-bold tracking-tighter text-zinc-900 dark:text-zinc-50 font-headline">
-            Goals
-          </h1>
         </div>
-        <button className="material-symbols-outlined text-zinc-900 dark:text-zinc-50 hover:opacity-80 transition-opacity active:scale-95 duration-200 p-2 bg-surface-container-low rounded-full">
-          notifications
-        </button>
+
+        {/* Mode Switcher */}
+        <div className="w-full bg-surface-container-high rounded-xl p-1 flex gap-1">
+          <button 
+            onClick={() => setMode('chat')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all ${mode === 'chat' ? 'bg-white shadow-sm text-primary' : 'text-on-surface-variant'}`}
+          >
+            <span className="material-symbols-outlined text-sm">chat_bubble</span>
+            Assistant
+          </button>
+          <button 
+            onClick={() => setMode('plan')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all ${mode === 'plan' ? 'bg-white shadow-sm text-secondary' : 'text-on-surface-variant'}`}
+          >
+            <span className="material-symbols-outlined text-sm">calendar_month</span>
+            Planning
+          </button>
+        </div>
       </header>
 
       {/* ─── Main Content ─── */}
-      <main className="pt-24 pb-32 px-5 mx-auto space-y-6 overflow-x-hidden max-w-[430px]">
+      <main className="pt-32 pb-32 px-5 mx-auto space-y-6 overflow-x-hidden max-w-[430px]">
 
         {/* ─── Hero: Athlete Intelligence ─── */}
         <section className="relative overflow-hidden rounded-2xl p-6 vitality-gradient min-h-[180px] flex flex-col justify-end shadow-lg shadow-secondary/20">
@@ -146,15 +185,27 @@ export default function AIAssistant() {
             {/* Quick Replies */}
             {messages.length === 1 && (
                <div className="flex flex-wrap gap-2 px-5 p-3 border-t border-outline-variant/5">
-                {[ "Yes, update targets", "What's my HRV?", "Suggest a warm-up"].map(suggestion => (
-                   <button 
-                    key={suggestion}
-                    onClick={() => handleSend(suggestion)}
-                    className="bg-white/50 border border-outline-variant/10 px-3 py-2 rounded-full text-[10px] font-bold text-on-surface-variant hover:bg-secondary-container transition-colors active:scale-95"
-                   >
-                    {suggestion}
-                  </button>
-                ))}
+                {mode === 'chat' ? (
+                  [ "What's my HRV?", "Suggest a warm-up", "How is my recovery?"].map(suggestion => (
+                    <button 
+                      key={suggestion}
+                      onClick={() => handleSend(suggestion)}
+                      className="bg-white/50 border border-outline-variant/10 px-3 py-2 rounded-full text-[10px] font-bold text-on-surface-variant hover:bg-secondary-container transition-colors active:scale-95"
+                    >
+                      {suggestion}
+                    </button>
+                  ))
+                ) : (
+                  [ "Create 4-week plan", "Bodyweight routine", "Hypertrophy focus"].map(suggestion => (
+                    <button 
+                      key={suggestion}
+                      onClick={() => handleSend(suggestion)}
+                      className="bg-white/50 border border-outline-variant/10 px-3 py-2 rounded-full text-[10px] font-bold text-secondary hover:bg-secondary-container transition-colors active:scale-95"
+                    >
+                      {suggestion}
+                    </button>
+                  ))
+                )}
               </div>
             )}
 
@@ -168,7 +219,7 @@ export default function AIAssistant() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   className="w-full bg-white border-none rounded-full py-4 pl-6 pr-14 shadow-md focus:ring-2 focus:ring-secondary/20 transition-all placeholder:text-outline text-sm"
-                  placeholder="Ask your coach anything..."
+                  placeholder={mode === 'chat' ? "Ask your coach anything..." : "Describe the plan you need..."}
                   type="text"
                 />
                 <button 

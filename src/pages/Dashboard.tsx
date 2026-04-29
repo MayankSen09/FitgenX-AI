@@ -73,20 +73,36 @@ export default function Dashboard() {
           </div>
           <div className="grid grid-cols-7 gap-2">
             {weekDays.map((day, i) => (
-              <div key={i} className="flex flex-col items-center gap-2">
-                <span className={`text-[0.6rem] font-bold font-label ${day.isToday ? 'text-secondary' : 'text-on-surface-variant'}`}>{day.label}</span>
-                <div className={`w-10 h-14 rounded-full flex items-center justify-center transition-all ${
+              <motion.div
+                key={i}
+                className="flex flex-col items-center gap-2 cursor-pointer group"
+                whileHover={{ y: -5, scale: 1.05 }}
+                whileTap={{ scale: 0.9 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05, type: 'spring', stiffness: 400, damping: 17 }}
+                onClick={() => navigate('/calendar')}
+              >
+                <span className={`text-[0.6rem] font-bold font-label transition-colors group-hover:text-secondary ${day.isToday ? 'text-secondary' : 'text-on-surface-variant'}`}>{day.label}</span>
+                <div className={`w-10 h-14 rounded-full flex items-center justify-center transition-all duration-300 group-hover:shadow-md ${
                   day.isToday ? 'bg-secondary text-white shadow-lg shadow-secondary/20 ring-2 ring-secondary/20 ring-offset-2' :
                   day.hasWorkout ? 'vitality-gradient text-white shadow-sm' :
-                  day.isPast ? 'bg-red-500/10 border border-red-500/20' : 'bg-surface-container-low border border-outline-variant/10'
+                  day.isPast ? 'bg-red-500/10 border border-red-500/20 group-hover:bg-red-500/20' : 'bg-surface-container-low border border-outline-variant/10 group-hover:border-secondary/30'
                 }`}>
                   {day.hasWorkout ? (
-                    <span className="material-symbols-outlined text-base">check</span>
+                    <motion.span 
+                      initial={{ scale: 0 }} 
+                      animate={{ scale: 1 }} 
+                      transition={{ delay: i * 0.05 + 0.2, type: 'spring' }}
+                      className="material-symbols-outlined text-base"
+                    >
+                      check
+                    </motion.span>
                   ) : (
                     <span className="text-sm font-bold">{day.date}</span>
                   )}
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </section>

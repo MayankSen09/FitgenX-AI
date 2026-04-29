@@ -1,8 +1,9 @@
 import { create } from 'zustand';
+import { Circle, Sparkles, Flame, Shield, Sword, Crown, Zap, LucideIcon } from 'lucide-react';
 
 export interface CreatureStage {
   name: string;
-  emoji: string;
+  icon: LucideIcon;
   minXP: number;
   color: string;
   glow: string;
@@ -10,13 +11,13 @@ export interface CreatureStage {
 }
 
 export const CREATURE_STAGES: CreatureStage[] = [
-  { name: 'Ember',     emoji: '🥚',  minXP: 0,     color: '#9CA3AF', glow: 'rgba(156,163,175,0.3)', size: 'text-2xl' },
-  { name: 'Sparklet',  emoji: '🐣',  minXP: 100,   color: '#FBBF24', glow: 'rgba(251,191,36,0.3)',  size: 'text-2xl' },
-  { name: 'Flamepup',  emoji: '🦊',  minXP: 500,   color: '#F97316', glow: 'rgba(249,115,22,0.4)',  size: 'text-3xl' },
-  { name: 'Blazekin',  emoji: '🐺',  minXP: 1500,  color: '#EF4444', glow: 'rgba(239,68,68,0.4)',   size: 'text-3xl' },
-  { name: 'Ironjaw',   emoji: '🦁',  minXP: 3000,  color: '#8B5CF6', glow: 'rgba(139,92,246,0.4)',  size: 'text-3xl' },
-  { name: 'Titanus',   emoji: '🐲',  minXP: 6000,  color: '#06B6D4', glow: 'rgba(6,182,212,0.5)',   size: 'text-4xl' },
-  { name: 'Apex',      emoji: '⚡',  minXP: 10000, color: '#F59E0B', glow: 'rgba(245,158,11,0.6)',  size: 'text-4xl' },
+  { name: 'Ember',     icon: Circle,    minXP: 0,     color: '#71717A', glow: 'rgba(113,113,122,0.3)', size: 'w-10 h-10' },
+  { name: 'Sparklet',  icon: Sparkles,  minXP: 100,   color: '#71717A', glow: 'rgba(113,113,122,0.3)', size: 'w-12 h-12' },
+  { name: 'Flamepup',  icon: Flame,     minXP: 500,   color: '#52525B', glow: 'rgba(82,82,91,0.4)',  size: 'w-16 h-16' },
+  { name: 'Blazekin',  icon: Sword,     minXP: 1500,  color: '#52525B', glow: 'rgba(82,82,91,0.4)',  size: 'w-20 h-20' },
+  { name: 'Ironjaw',   icon: Shield,    minXP: 3000,  color: '#3F3F46', glow: 'rgba(63,63,70,0.4)',  size: 'w-24 h-24' },
+  { name: 'Titanus',   icon: Crown,     minXP: 6000,  color: '#3F3F46', glow: 'rgba(63,63,70,0.5)',  size: 'w-28 h-28' },
+  { name: 'Apex',      icon: Zap,       minXP: 10000, color: '#27272A', glow: 'rgba(39,39,42,0.6)',  size: 'w-32 h-32' },
 ];
 
 interface CreatureState {

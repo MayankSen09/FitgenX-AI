@@ -16,6 +16,7 @@ import Challenges from './pages/Challenges.tsx';
 import Tracking from './pages/Tracking.tsx';
 import Settings from './pages/Settings.tsx';
 import Creature from './pages/Creature.tsx';
+import CalendarView from './pages/CalendarView.tsx';
 import { ToastContainer } from './components/common/Toast.tsx';
 import BottomNav from './components/layout/BottomNav.tsx';
 
@@ -43,6 +44,7 @@ export default function App() {
           <Route path="/social" element={<SocialFeeds />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/creature" element={<Creature />} />
+          <Route path="/calendar" element={<CalendarView />} />
         </Routes>
       </AnimatePresence>
       {showNav && <BottomNav />}

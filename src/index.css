@@ -19,6 +19,15 @@
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
   }
+  .btn {
+    @apply px-6 py-3 rounded-2xl font-bold transition-all active:scale-[0.98] flex items-center justify-center gap-2;
+  }
+  .btn-primary {
+    @apply bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-lg shadow-zinc-900/10 dark:shadow-none;
+  }
+  .btn-secondary {
+    @apply bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700;
+  }
 }
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar {

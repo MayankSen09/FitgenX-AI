@@ -102,10 +102,10 @@ export default function WorkoutDetail() {
          </div>
       </section>
 
-      <div className="fixed bottom-24 left-6 right-6 z-50">
+      <div className="fixed bottom-32 left-6 right-6 z-50">
          <button
            onClick={() => navigate(`/workout-player/${plan.id}`)}
-           className="btn btn-primary w-full py-6 text-xl shadow-2xl flex items-center justify-center gap-4 group"
+           className="w-full py-6 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-[2rem] text-xl font-bold shadow-2xl flex items-center justify-center gap-4 transition-transform active:scale-[0.98] group"
          >
            <Play size={28} className="fill-current" />
            START SESSION

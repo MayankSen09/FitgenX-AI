@@ -97,7 +97,36 @@ export default function Profile() {
           </div>
           <p className="text-xs text-on-surface-variant">Goal: 300 minutes per week</p>
         </section>
-
+        {/* Fitness Profile */}
+        {profile && (
+          <section className="bg-surface-container-low p-6 rounded-2xl space-y-4">
+            <h3 className="font-headline text-lg font-bold">Fitness Profile</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <p className="text-[10px] uppercase tracking-widest font-bold text-outline">Activity</p>
+                <p className="text-sm font-bold text-on-surface">{profile.activityLevel}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] uppercase tracking-widest font-bold text-outline">Experience</p>
+                <p className="text-sm font-bold text-on-surface">{profile.fitnessHistory}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] uppercase tracking-widest font-bold text-outline">Frequency</p>
+                <p className="text-sm font-bold text-on-surface">{profile.workoutFrequency} days/week</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] uppercase tracking-widest font-bold text-outline">Goal</p>
+                <p className="text-sm font-bold text-secondary">{profile.focus}</p>
+              </div>
+            </div>
+            {profile.medicalConditions !== 'None' && profile.medicalConditions !== '' && (
+              <div className="pt-2 border-t border-outline-variant/10">
+                <p className="text-[10px] uppercase tracking-widest font-bold text-outline">Medical / Injuries</p>
+                <p className="text-xs text-on-surface-variant mt-1">{profile.medicalConditions}</p>
+              </div>
+            )}
+          </section>
+        )}
         {/* Share Progress Card */}
         <section className="bg-primary/5 p-6 rounded-3xl border border-primary/10 flex items-center justify-between group cursor-pointer active:scale-[0.98] transition-transform">
           <div className="flex items-center gap-4">

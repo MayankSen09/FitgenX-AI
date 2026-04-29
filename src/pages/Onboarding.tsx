@@ -19,6 +19,10 @@ export default function Onboarding() {
   const [age, setAge] = useState('24');
   const [height, setHeight] = useState('178');
   const [weight, setWeight] = useState('72.5');
+  const [activityLevel, setActivityLevel] = useState('Moderately Active');
+  const [fitnessHistory, setFitnessHistory] = useState('1-2 years');
+  const [workoutFrequency, setWorkoutFrequency] = useState('4');
+  const [medicalConditions, setMedicalConditions] = useState('None');
 
   // AI Generation State
   const [isGenerating, setIsGenerating] = useState(false);
@@ -31,10 +35,10 @@ export default function Onboarding() {
   };
 
   const nextStep = () => {
-    if (step < 3) {
+    if (step < 4) {
       setDirection(1);
       setStep(s => s + 1);
-    } else if (step === 3) {
+    } else if (step === 4) {
       startGeneration();
     }
   };
@@ -48,15 +52,18 @@ export default function Onboarding() {
 
   const startGeneration = () => {
     // Save profile to store
-    setProfile({ name, college, age, gender, height, weight, focus, level, preferences });
+    setProfile({ 
+      name, college, age, gender, height, weight, focus, level, preferences,
+      activityLevel, fitnessHistory, workoutFrequency, medicalConditions 
+    });
     // Mark onboarding as complete
     localStorage.setItem('fitgenx-onboarding-complete', 'true');
-    setStep(4);
+    setStep(5);
     setIsGenerating(true);
   };
 
   useEffect(() => {
-    if (step === 4 && isGenerating) {
+    if (step === 5 && isGenerating) {
       const interval = setInterval(() => {
         setGenerationProgress(prev => {
           if (prev >= 100) {
@@ -89,10 +96,11 @@ export default function Onboarding() {
   };
 
   const stepsData = [
-    { title: "Personal Details", subtitle: "Step 1 of 4", progress: 25 },
-    { title: "Physical Metrics", subtitle: "Step 2 of 4", progress: 50 },
-    { title: "Performance & Goals", subtitle: "Step 3 of 4", progress: 75 },
-    { title: "Generating Plan", subtitle: "Step 4 of 4", progress: 100 },
+    { title: "Personal Details", subtitle: "Step 1 of 5", progress: 20 },
+    { title: "Physical Metrics", subtitle: "Step 2 of 5", progress: 40 },
+    { title: "Goals & Environment", subtitle: "Step 3 of 5", progress: 60 },
+    { title: "Lifestyle & Commitment", subtitle: "Step 4 of 5", progress: 80 },
+    { title: "Generating Plan", subtitle: "Step 5 of 5", progress: 100 },
   ];
 
   return (
@@ -103,7 +111,7 @@ export default function Onboarding() {
       </div>
 
       <main className="relative z-10 min-h-screen flex flex-col items-center px-6 pt-12 pb-24 max-w-2xl mx-auto overflow-hidden">
-        {step < 4 && (
+        {step < 5 && (
           <header className="w-full mb-12 text-center">
             <div className="flex justify-between items-end mb-8">
               <div className="text-left">
@@ -333,6 +341,71 @@ export default function Onboarding() {
               )}
 
               {step === 4 && (
+                <div className="space-y-8 pb-12">
+                  <section className="space-y-4">
+                    <label className="font-label text-label-sm uppercase tracking-widest text-outline font-bold">Current Activity Level</label>
+                    <div className="grid grid-cols-1 gap-2">
+                      {[
+                        { id: 'Sedentary', desc: 'Little to no exercise' },
+                        { id: 'Lightly Active', desc: '1-3 days/week exercise' },
+                        { id: 'Moderately Active', desc: '3-5 days/week exercise' },
+                        { id: 'Very Active', desc: '6-7 days/week exercise' }
+                      ].map((item) => (
+                        <div 
+                          key={item.id} 
+                          onClick={() => setActivityLevel(item.id)} 
+                          className={`p-4 rounded-xl flex flex-col cursor-pointer transition-all ${activityLevel === item.id ? 'bg-secondary-container/10 border-2 border-secondary' : 'bg-surface-container-low'}`}
+                        >
+                          <span className={`font-bold ${activityLevel === item.id ? 'text-secondary' : 'text-on-surface'}`}>{item.id}</span>
+                          <span className="text-xs text-on-surface-variant">{item.desc}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className="grid grid-cols-2 gap-4">
+                    <div className="space-y-4">
+                      <label className="font-label text-label-sm uppercase tracking-widest text-outline font-bold">Training Days/Week</label>
+                      <div className="flex items-center gap-3 bg-surface-container-low p-4 rounded-xl">
+                        <input 
+                          type="range" min="1" max="7" 
+                          value={workoutFrequency} 
+                          onChange={(e) => setWorkoutFrequency(e.target.value)}
+                          className="flex-1 accent-secondary"
+                        />
+                        <span className="font-headline text-xl font-bold text-secondary w-8 text-center">{workoutFrequency}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-4">
+                      <label className="font-label text-label-sm uppercase tracking-widest text-outline font-bold">Experience</label>
+                      <select 
+                        value={fitnessHistory}
+                        onChange={(e) => setFitnessHistory(e.target.value)}
+                        className="w-full bg-surface-container-low border-none rounded-xl p-4 font-bold text-on-surface focus:ring-secondary"
+                      >
+                        <option>New to fitness</option>
+                        <option>6-12 months</option>
+                        <option>1-2 years</option>
+                        <option>3+ years</option>
+                      </select>
+                    </div>
+                  </section>
+
+                  <section className="space-y-4">
+                    <label className="font-label text-label-sm uppercase tracking-widest text-outline font-bold">Medical Conditions / Injuries</label>
+                    <div className="bg-surface-container-low p-4 rounded-xl">
+                      <textarea 
+                        className="w-full bg-transparent border-none p-0 focus:ring-0 text-on-surface placeholder:text-outline-variant/40 resize-none h-20 text-sm"
+                        value={medicalConditions}
+                        onChange={(e) => setMedicalConditions(e.target.value)}
+                        placeholder="e.g. Back pain, asthma, none"
+                      />
+                    </div>
+                  </section>
+                </div>
+              )}
+
+              {step === 5 && (
                 <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-12">
                   <div className="relative w-48 h-48 flex items-center justify-center">
                     <div className="absolute inset-0 vitality-gradient opacity-20 blur-3xl rounded-full animate-pulse"></div>
@@ -362,7 +435,7 @@ export default function Onboarding() {
                   <div className="space-y-4 max-w-sm">
                     <h2 className="text-2xl font-bold font-headline tracking-tight text-on-surface">Architecting Your Program</h2>
                     <p className="text-sm text-on-surface-variant leading-relaxed">
-                      Our AI engine is currently analyzing your <span className="font-bold text-secondary">32 data points</span> to create a custom hypertrophy protocol.
+                      Our AI engine is currently analyzing your <span className="font-bold text-secondary">48 data points</span> to create a custom hypertrophy protocol.
                     </p>
                     <div className="flex flex-col gap-3 pt-6">
                        {generationProgress > 20 && <div className="flex items-center gap-3 text-left bg-surface-container-low p-4 rounded-xl border border-secondary/10 animate-fade-in">
@@ -385,7 +458,7 @@ export default function Onboarding() {
           </AnimatePresence>
         </div>
 
-        {step < 4 && (
+        {step < 5 && (
           <footer className="fixed bottom-0 left-0 w-full p-6 pb-10 flex justify-center pointer-events-none">
             <div className="w-full max-w-lg pointer-events-auto flex gap-4">
               {step > 1 && (
@@ -400,8 +473,8 @@ export default function Onboarding() {
                 onClick={nextStep} 
                 className="flex-1 py-5 rounded-full bg-primary text-on-primary font-headline font-extrabold text-lg flex items-center justify-center gap-3 shadow-[0_12px_40px_rgba(0,0,0,0.2)] active:scale-95 transition-all"
               >
-                <span>{step === 3 ? 'Generate AI Plan' : 'Continue'}</span>
-                <span className="material-symbols-outlined" data-icon="arrow_forward">{step === 3 ? 'bolt' : 'arrow_forward'}</span>
+                <span>{step === 4 ? 'Generate AI Plan' : 'Continue'}</span>
+                <span className="material-symbols-outlined" data-icon="arrow_forward">{step === 4 ? 'bolt' : 'arrow_forward'}</span>
               </button>
             </div>
           </footer>

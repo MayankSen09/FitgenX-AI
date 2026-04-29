@@ -27,6 +27,10 @@ export interface UserProfile {
   focus: string;
   level: string;
   preferences: string[];
+  activityLevel: string;
+  fitnessHistory: string;
+  workoutFrequency: string;
+  medicalConditions: string;
 }
 
 interface AppState {

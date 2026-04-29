@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { Dumbbell, Flame, Activity, MessageSquare, Lock } from 'lucide-react';
 import { useCreatureStore, CREATURE_STAGES } from '../stores/creatureStore';
 import { useAppStore } from '../store/useAppStore';
 
@@ -51,9 +52,9 @@ export default function Creature() {
             transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
             className="relative z-10"
           >
-            <span className={`${stage.size} select-none`} style={{ filter: `drop-shadow(0 0 12px ${stage.glow})` }}>
-              {stage.emoji}
-            </span>
+            <div className="flex items-center justify-center select-none" style={{ filter: `drop-shadow(0 0 12px ${stage.glow})`, color: stage.color }}>
+              <stage.icon className={stage.size} strokeWidth={1.5} />
+            </div>
           </motion.div>
 
           {/* Name & Level */}
@@ -83,7 +84,7 @@ export default function Creature() {
           {nextStage ? (
             <p className="text-xs text-on-surface-variant">
               <span className="text-on-surface font-semibold">{nextStage.minXP - xp} XP</span> until evolution to{' '}
-              <span style={{ color: nextStage.color }} className="font-bold">{nextStage.emoji} {nextStage.name}</span>
+              <span style={{ color: nextStage.color }} className="font-bold inline-flex items-center gap-1 align-bottom"><nextStage.icon className="w-3.5 h-3.5" /> {nextStage.name}</span>
             </p>
           ) : (
             <p className="text-xs font-bold" style={{ color: stage.color }}>⚡ MAX EVOLUTION REACHED</p>
@@ -106,12 +107,10 @@ export default function Creature() {
                   style={isCurrent ? { borderColor: stage.color + '40' } : {}}
                 >
                   <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${
-                      isUnlocked ? '' : 'grayscale'
-                    }`}
-                    style={isUnlocked ? { backgroundColor: s.color + '15' } : { backgroundColor: 'rgba(0,0,0,0.03)' }}
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center`}
+                    style={isUnlocked ? { backgroundColor: s.color + '15', color: s.color } : { backgroundColor: 'rgba(0,0,0,0.03)', color: '#A1A1AA' }}
                   >
-                    {isUnlocked ? s.emoji : '🔒'}
+                    {isUnlocked ? <s.icon className="w-5 h-5" /> : <Lock className="w-4 h-4" />}
                   </div>
                   <div className="flex-1">
                     <p className={`text-sm font-bold ${isUnlocked ? 'text-on-surface' : 'text-outline'}`}>
@@ -136,22 +135,22 @@ export default function Creature() {
           <h3 className="text-[0.6rem] font-bold uppercase tracking-widest text-outline">How to Earn XP</h3>
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-surface-container-low p-4 rounded-xl border border-outline-variant/5">
-              <span className="text-lg">🏋️</span>
+              <Dumbbell className="w-6 h-6 text-zinc-500" />
               <p className="text-xs font-bold text-on-surface mt-2">Complete Workout</p>
               <p className="text-[10px] text-secondary font-bold">+50-200 XP</p>
             </div>
             <div className="bg-surface-container-low p-4 rounded-xl border border-outline-variant/5">
-              <span className="text-lg">🔥</span>
+              <Flame className="w-6 h-6 text-zinc-500" />
               <p className="text-xs font-bold text-on-surface mt-2">Daily Streak</p>
               <p className="text-[10px] text-secondary font-bold">+25 XP/day</p>
             </div>
             <div className="bg-surface-container-low p-4 rounded-xl border border-outline-variant/5">
-              <span className="text-lg">🏃</span>
+              <Activity className="w-6 h-6 text-zinc-500" />
               <p className="text-xs font-bold text-on-surface mt-2">Track a Run</p>
               <p className="text-[10px] text-secondary font-bold">+75 XP</p>
             </div>
             <div className="bg-surface-container-low p-4 rounded-xl border border-outline-variant/5">
-              <span className="text-lg">💬</span>
+              <MessageSquare className="w-6 h-6 text-zinc-500" />
               <p className="text-xs font-bold text-on-surface mt-2">Ask AI Coach</p>
               <p className="text-[10px] text-secondary font-bold">+10 XP</p>
             </div>

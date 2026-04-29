@@ -42,6 +42,9 @@ interface AppState {
   // Workout History
   workoutHistory: WorkoutHistoryEntry[];
 
+  // Weekly Schedule (Day index 0-6 -> Workout Plan ID)
+  weeklySchedule: string[];
+
   // App Actions
   updateStats: (newStats: Partial<UserStats>) => void;
   resetStats: () => void;
@@ -56,6 +59,9 @@ interface AppState {
 
   // Streak
   getStreak: () => number;
+
+  // Schedule Actions
+  updateSchedule: (dayIndex: number, planId: string) => void;
 }
 
 // Load persisted state from localStorage
@@ -98,6 +104,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   goal: persisted.goal || null,
   profile: persisted.profile || null,
   workoutHistory: persisted.workoutHistory || [],
+  weeklySchedule: (persisted as any).weeklySchedule || ['push-day', 'pull-day', 'leg-day', 'upper-body-power', 'full-body-strength', 'hiit-blast', 'core-crusher'],
   activeWorkoutId: null,
 
   // Action methods
@@ -168,5 +175,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       }
     }
     return streak;
+  },
+
+  updateSchedule: (dayIndex, planId) => {
+    set((state) => {
+      const newSchedule = [...state.weeklySchedule];
+      newSchedule[dayIndex] = planId;
+      const updated = { weeklySchedule: newSchedule };
+      saveState({ ...state, ...updated } as any);
+      return updated;
+    });
   },
 }));

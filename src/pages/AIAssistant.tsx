@@ -56,7 +56,7 @@ export default function AIAssistant() {
 
     let contextPrompt = messageText;
     if (mode === 'plan') {
-       contextPrompt = `GENERATE A STRUCTURED WORKOUT PLAN. User Profile: Name: ${profile?.name}, Age: ${profile?.age}, Goal: ${profile?.focus}, Level: ${profile?.level}, Activity: ${profile?.activityLevel}, Frequency: ${profile?.workoutFrequency}. \n\nUser Request: ${messageText}. Please provide a detailed week-by-week or day-by-day plan with exercises, sets, and reps.`;
+       contextPrompt = `GENERATE A STRUCTURED WORKOUT PLAN. User Profile: Name: ${profile?.name}, Age: ${profile?.age}, Goal: ${profile?.focus}, Level: ${profile?.level}, Activity: ${profile?.activityLevel}, Frequency: ${profile?.workoutFrequency}. \n\nUser Request: ${messageText}. Please provide a detailed week-by-week or day-by-day plan with exercises, sets, and reps. REMIND THE USER THAT THEY CAN MANUALLY EDIT THEIR WEEKLY SCHEDULE IN THE PLANNING SECTION.`;
     } else if (messages.length === 1 && profile) {
       contextPrompt = `User Profile: Name: ${profile.name}, Age: ${profile.age}, Gender: ${profile.gender}, Height: ${profile.height}cm, Weight: ${profile.weight}kg, Goal: ${profile.focus}, Level: ${profile.level}, Preferences: ${profile.preferences.join(', ')}, Activity: ${profile.activityLevel}, History: ${profile.fitnessHistory}, Frequency: ${profile.workoutFrequency} days/week, Medical: ${profile.medicalConditions}. \n\nUser Message: ${messageText}`;
     }
@@ -133,7 +133,16 @@ export default function AIAssistant() {
         <section className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-bold tracking-tight text-on-surface font-headline">AI Coach Chat</h2>
-            <button className="text-secondary font-bold text-xs" onClick={() => setMessages([messages[0]])}>Clear History</button>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => navigate('/planning')}
+                className="text-zinc-900 dark:text-zinc-50 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1 bg-zinc-900/5 dark:bg-white/5 px-3 py-1.5 rounded-lg"
+              >
+                <span className="material-symbols-outlined text-[14px]">edit_calendar</span>
+                Edit Schedule
+              </button>
+              <button className="text-secondary font-bold text-xs" onClick={() => setMessages([messages[0]])}>Clear History</button>
+            </div>
           </div>
           
           <div className="bg-surface-container rounded-2xl flex flex-col h-[400px]">

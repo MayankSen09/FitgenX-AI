@@ -168,7 +168,13 @@ export default function Dashboard() {
         <section>
           <div className="flex justify-between items-center mb-6">
             <h2 className="font-headline text-lg font-extrabold tracking-tight">Today's Routine</h2>
-            <button onClick={() => navigate('/workouts')} className="text-secondary font-bold text-xs uppercase tracking-widest">Explore All</button>
+            <div className="flex gap-4">
+              <button onClick={() => navigate('/planning')} className="text-zinc-900 dark:text-zinc-50 font-bold text-xs uppercase tracking-widest flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm">edit_calendar</span>
+                Plan
+              </button>
+              <button onClick={() => navigate('/workouts')} className="text-zinc-500 font-bold text-xs uppercase tracking-widest">Explore All</button>
+            </div>
           </div>
           <div className="flex flex-col gap-6">
             {todaysWorkouts.map((workout) => (

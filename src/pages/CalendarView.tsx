@@ -6,7 +6,7 @@ import { WORKOUT_PLANS } from '../data/workoutPlans';
 
 export default function CalendarView() {
   const navigate = useNavigate();
-  const { getStreak, workoutHistory } = useAppStore();
+  const { getStreak, workoutHistory, weeklySchedule } = useAppStore();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
 
@@ -35,9 +35,8 @@ export default function CalendarView() {
   const historyForSelected = workoutHistory.filter(w => w.date.startsWith(selectedDateStr));
 
   // Determine planned workout for selected date
-  const WEEKLY_SCHEDULE = ['push-day', 'pull-day', 'leg-day', 'upper-body-power', 'full-body-strength', 'hiit-blast', 'core-crusher'];
   const dayOfWeek = selectedDate.getDay();
-  const plannedId = WEEKLY_SCHEDULE[dayOfWeek % WEEKLY_SCHEDULE.length];
+  const plannedId = weeklySchedule[dayOfWeek];
   const plannedWorkout = WORKOUT_PLANS.find(p => p.id === plannedId);
 
   return (
@@ -64,13 +63,13 @@ export default function CalendarView() {
           className="bg-zinc-900 text-white rounded-3xl p-6 shadow-xl relative overflow-hidden flex justify-between items-center"
         >
           <div className="z-10">
-            <p className="text-[0.6rem] font-bold font-label uppercase tracking-widest text-secondary mb-1">Current Streak</p>
+            <p className="text-[0.6rem] font-bold font-label uppercase tracking-widest text-zinc-500 mb-1">Current Streak</p>
             <h2 className="text-4xl font-headline font-extrabold flex items-center gap-2">
-              {streak} <span className="text-2xl text-secondary">Days</span>
-              <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: '"FILL" 1' }}>local_fire_department</span>
+              {streak} <span className="text-2xl text-zinc-400">Days</span>
+              <span className="material-symbols-outlined text-zinc-400" style={{ fontVariationSettings: '"FILL" 1' }}>local_fire_department</span>
             </h2>
           </div>
-          <div className="absolute -right-10 -top-10 w-40 h-40 bg-secondary/30 rounded-full blur-3xl pointer-events-none"></div>
+          <div className="absolute -right-10 -top-10 w-40 h-40 bg-zinc-800/50 rounded-full blur-3xl pointer-events-none"></div>
         </motion.div>
 
         {/* Calendar View */}

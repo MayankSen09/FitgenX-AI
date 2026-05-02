@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Play, Pause, RotateCcw, Plus, Minus } from 'lucide-react';
+import { ArrowLeft, RotateCcw, Plus, Minus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function TimerTool() {
@@ -17,6 +17,7 @@ export default function TimerTool() {
       }, 1000);
     } else if (seconds === 0) {
       setIsActive(false);
+      if (window.navigator.vibrate) window.navigator.vibrate([100, 50, 100]);
     }
     return () => clearInterval(interval);
   }, [isActive, seconds]);
@@ -31,94 +32,126 @@ export default function TimerTool() {
 
   return (
     <motion.div 
-      className="screen pt-safe bg-bg-primary h-screen flex flex-col"
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 1.05 }}
+      className="bg-bg-primary min-h-screen pb-32"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
     >
-      <div className="flex items-center justify-between mb-12">
-        <button onClick={() => navigate(-1)} className="p-3 bg-white rounded-full text-text-secondary shadow-sm">
-          <ArrowLeft size={24} />
+      <header className="fixed top-0 w-full max-w-[430px] left-1/2 -translate-x-1/2 z-50 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl flex justify-between items-center px-6 py-4 border-b border-outline-variant/5">
+        <button onClick={() => navigate(-1)} className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container-low active:scale-95 transition-transform">
+          <ArrowLeft size={20} className="text-zinc-900 dark:text-zinc-50" />
         </button>
-        <h2 className="headline-md text-primary">Focused Intervallic</h2>
-        <div className="w-12"></div>
-      </div>
+        <div className="text-center">
+          <p className="text-[0.6rem] font-bold uppercase tracking-widest text-secondary font-label leading-none mb-1">Workout Tool</p>
+          <h2 className="text-lg font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50 font-headline">Focus Timer</h2>
+        </div>
+        <button className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container-low active:scale-95 transition-transform">
+          <RotateCcw size={20} onClick={() => { setSeconds(totalSeconds); setIsActive(false); }} className="text-zinc-900 dark:text-zinc-50" />
+        </button>
+      </header>
 
-      <div className="flex-1 flex flex-col items-center">
-         <div className="relative w-80 h-80 flex items-center justify-center mb-16">
-            <svg className="w-full h-full -rotate-90">
-               <circle 
-                  cx="160" cy="160" r="140" fill="none" stroke="var(--bg-elevated)" 
-                  strokeWidth="20" strokeLinecap="round" 
-               />
-               <motion.circle 
-                  cx="160" cy="160" r="140" fill="none" stroke="var(--secondary)" 
-                  strokeWidth="20" strokeLinecap="round"
-                  strokeDasharray="880"
-                  animate={{ strokeDashoffset: 880 - (880 * progress) / 100 }}
-                  transition={{ duration: 1, ease: "linear" }}
-                  className="vitality-ring"
-               />
-            </svg>
-            <div className="absolute inset-x-0 inset-y-0 flex flex-col items-center justify-center">
-               <span className="text-[10px] font-extrabold text-text-tertiary uppercase tracking-widest mb-2 leading-none">Intensity Momentum</span>
-               <h1 className="display-lg text-primary tabular-nums tracking-tighter mb-1 leading-none">{formatTime(seconds)}</h1>
-               <span className="text-xs font-bold text-secondary uppercase tracking-tighter">Remaining</span>
-            </div>
-         </div>
+      <main className="mt-32 px-6 max-w-[430px] mx-auto flex flex-col items-center w-full">
+        {/* Hero Progress Ring */}
+        <div className="relative w-72 h-72 flex items-center justify-center mb-16">
+          <svg className="w-full h-full -rotate-90">
+            <circle 
+              cx="144" cy="144" r="130" fill="none" stroke="currentColor" 
+              className="text-zinc-100 dark:text-zinc-800"
+              strokeWidth="10" strokeLinecap="round" 
+            />
+            <motion.circle 
+              cx="144" cy="144" r="130" fill="none" stroke="url(#vitality-gradient-timer)" 
+              strokeWidth="10" strokeLinecap="round"
+              strokeDasharray={2 * Math.PI * 130}
+              animate={{ 
+                strokeDashoffset: (2 * Math.PI * 130) * (1 - (progress / 100))
+              }}
+              transition={{ duration: 1, ease: "linear" }}
+            />
+            <defs>
+              <linearGradient id="vitality-gradient-timer" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#10b981" />
+                <stop offset="100%" stopColor="#0058bc" />
+              </linearGradient>
+            </defs>
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <motion.div 
+              animate={isActive ? { scale: [1, 1.02, 1] } : {}}
+              transition={{ repeat: Infinity, duration: 2 }}
+              className="text-center"
+            >
+              <h1 className="text-6xl font-black tabular-nums tracking-tighter text-zinc-900 dark:text-zinc-50 font-headline mb-1">{formatTime(seconds)}</h1>
+              <div className="flex items-center justify-center gap-2">
+                <div className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-[#10b981] animate-pulse' : 'bg-zinc-300 dark:bg-zinc-700'}`} />
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 font-label">{isActive ? 'Flowing' : 'Paused'}</span>
+              </div>
+            </motion.div>
+          </div>
+        </div>
 
-         {/* Timer Presets */}
-         <div className="grid grid-cols-2 gap-4 w-full mb-12">
-            {[300, 600, 1200, 1800].map((t) => (
-               <button 
-                  key={t}
-                  onClick={() => { setSeconds(t); setTotalSeconds(t); setIsActive(false); }}
-                  className={`card p-6 flex flex-col items-center justify-center text-center hover:bg-bg-elevated transition-colors border-2 ${
-                    totalSeconds === t ? 'border-secondary bg-secondary/5' : 'border-transparent'
-                  }`}
-               >
-                  <span className="text-xs font-extrabold text-primary mb-1 uppercase tracking-tighter">{t / 60} Min</span>
-                  <span className="text-[10px] font-bold text-text-tertiary uppercase">Session</span>
-               </button>
+        {/* Quick Presets Section */}
+        <section className="w-full mb-10">
+          <div className="flex justify-between items-end mb-4">
+            <h3 className="font-headline text-sm font-extrabold tracking-tight">Presets</h3>
+            <span className="text-tertiary font-bold font-label text-[0.6rem] uppercase tracking-widest">Select Duration</span>
+          </div>
+          <div className="grid grid-cols-4 gap-3">
+            {[60, 300, 600, 900].map((t) => (
+              <button 
+                key={t}
+                onClick={() => { setSeconds(t); setTotalSeconds(t); setIsActive(false); }}
+                className={`py-4 rounded-2xl border transition-all flex flex-col items-center justify-center shadow-sm ${
+                  totalSeconds === t 
+                    ? 'bg-secondary text-white border-secondary shadow-lg shadow-secondary/20' 
+                    : 'bg-white dark:bg-zinc-900 border-outline-variant/10 text-zinc-900 dark:text-zinc-50'
+                }`}
+              >
+                <span className="text-lg font-black font-headline">{t / 60}</span>
+                <span className="text-[8px] font-black uppercase tracking-widest opacity-60 font-label">Min</span>
+              </button>
             ))}
-         </div>
+          </div>
+        </section>
 
-         {/* Precision Adjustments */}
-         <div className="flex items-center gap-10 mb-20 bg-bg-elevated p-4 rounded-full">
+        {/* Manual Adjustments */}
+        <section className="w-full mb-12">
+          <div className="bg-surface-container-low p-3 rounded-[2rem] border border-outline-variant/5 flex items-center justify-between">
             <button 
-               onClick={() => setSeconds(Math.max(0, seconds - 30))}
-               className="w-14 h-14 rounded-full bg-white text-primary flex items-center justify-center shadow-sm hover:scale-110 active:scale-95 transition-transform"
+              onClick={() => setSeconds(Math.max(0, seconds - 30))}
+              className="w-14 h-14 rounded-full bg-white dark:bg-zinc-800 shadow-sm flex items-center justify-center text-zinc-900 dark:text-zinc-50 active:scale-90 transition-transform"
             >
-               <Minus size={24} />
+              <Minus size={20} />
             </button>
-            <div className="flex flex-col items-center min-w-[60px]">
-               <span className="text-sm font-black text-primary">30s</span>
-               <span className="text-[10px] font-extrabold text-text-tertiary uppercase tracking-tighter">Adjust</span>
+            <div className="text-center">
+              <p className="text-[0.6rem] font-bold uppercase tracking-widest text-zinc-400 font-label">Precision Adjustment</p>
+              <p className="font-headline font-black text-lg text-secondary">± 30 Seconds</p>
             </div>
             <button 
-               onClick={() => setSeconds(seconds + 30)}
-               className="w-14 h-14 rounded-full bg-white text-primary flex items-center justify-center shadow-sm hover:scale-110 active:scale-95 transition-transform"
+              onClick={() => setSeconds(seconds + 30)}
+              className="w-14 h-14 rounded-full bg-white dark:bg-zinc-800 shadow-sm flex items-center justify-center text-zinc-900 dark:text-zinc-50 active:scale-90 transition-transform"
             >
-               <Plus size={24} />
+              <Plus size={20} />
             </button>
-         </div>
+          </div>
+        </section>
 
-         <div className="flex items-center gap-6 w-full mb-20 px-2">
-            <button 
-               onClick={() => { setSeconds(totalSeconds); setIsActive(false); }}
-               className="p-6 bg-white rounded-full text-text-tertiary hover:text-rose-500 transition-colors shadow-sm"
-            >
-               <RotateCcw size={32} />
-            </button>
-            <button 
-               onClick={() => setIsActive(!isActive)}
-               className="btn btn-primary flex-1 py-6 text-xl shadow-2xl flex items-center justify-center gap-4 group uppercase"
-            >
-               {isActive ? <Pause size={32} className="fill-current" /> : <Play size={32} className="fill-current" />}
-               {isActive ? 'Freeze' : 'Propel'}
-            </button>
-         </div>
-      </div>
+        {/* Primary Action Button */}
+        <button 
+          onClick={() => setIsActive(!isActive)}
+          className={`w-full py-5 rounded-[2rem] flex items-center justify-center gap-4 font-headline text-xl font-black italic uppercase tracking-[0.2em] transition-all shadow-xl active:scale-[0.98] ${
+            isActive 
+              ? 'bg-zinc-900 text-white' 
+              : 'bg-secondary text-white shadow-secondary/30'
+          }`}
+        >
+          {isActive ? (
+            <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: '"FILL" 1' }}>pause</span>
+          ) : (
+            <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: '"FILL" 1' }}>play_arrow</span>
+          )}
+          {isActive ? 'Freeze' : 'Propel'}
+        </button>
+      </main>
     </motion.div>
   );
 }

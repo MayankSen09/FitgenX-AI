@@ -18,6 +18,8 @@ import Settings from './pages/Settings.tsx';
 import Creature from './pages/Creature.tsx';
 import CalendarView from './pages/CalendarView.tsx';
 import PlanningView from './pages/PlanningView.tsx';
+import Marketplace from './pages/Marketplace.tsx';
+import ExerciseDetail from './pages/ExerciseDetail.tsx';
 import { ToastContainer } from './components/common/Toast.tsx';
 import BottomNav from './components/layout/BottomNav.tsx';
 
@@ -47,6 +49,8 @@ export default function App() {
           <Route path="/creature" element={<Creature />} />
           <Route path="/calendar" element={<CalendarView />} />
           <Route path="/planning" element={<PlanningView />} />
+          <Route path="/store" element={<Marketplace />} />
+          <Route path="/exercise-detail/:id" element={<ExerciseDetail />} />
         </Routes>
       </AnimatePresence>
       {showNav && <BottomNav />}

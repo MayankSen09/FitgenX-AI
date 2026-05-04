@@ -27,6 +27,17 @@ export const useToastStore = create<ToastStore>((set) => ({
   removeToast: (id) => set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) })),
 }));
 
+export const toast = {
+  success: (message: string, title: string = "Success") => 
+    useToastStore.getState().addToast({ title, message, type: 'success' }),
+  info: (message: string, title: string = "Notice") => 
+    useToastStore.getState().addToast({ title, message, type: 'info' }),
+  error: (message: string, title: string = "Error") => 
+    useToastStore.getState().addToast({ title, message, type: 'info' }),
+  achievement: (message: string, title: string = "Achievement Unlocked") => 
+    useToastStore.getState().addToast({ title, message, type: 'achievement' }),
+};
+
 export function ToastContainer() {
   const { toasts, removeToast } = useToastStore();
 
@@ -39,19 +50,19 @@ export function ToastContainer() {
             initial={{ opacity: 0, y: -20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
-            className="glass-strong p-4 rounded-2xl border border-border-medium flex items-center gap-4 w-full max-w-[360px] pointer-events-auto shadow-glow-sm"
+            className="bg-zinc-900 dark:bg-zinc-100 p-4 rounded-2xl border border-white/10 dark:border-black/5 flex items-center gap-4 w-full max-w-[360px] pointer-events-auto shadow-[0_20px_50px_rgba(0,0,0,0.3)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.1)]"
           >
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-              toast.type === 'achievement' ? 'bg-gradient-hero text-white' :
-              toast.type === 'success' ? 'bg-success/20 text-success' : 'bg-accent/20 text-accent'
+              toast.type === 'achievement' ? 'bg-emerald-500 text-white' :
+              toast.type === 'success' ? 'bg-emerald-500/20 text-emerald-500 dark:bg-emerald-100 dark:text-emerald-600' : 'bg-blue-500/20 text-blue-500 dark:bg-blue-100 dark:text-blue-600'
             }`}>
               {toast.type === 'achievement' ? <Trophy size={20} /> : 
                toast.type === 'success' ? <CheckCircle2 size={20} /> : <Info size={20} />}
             </div>
             
             <div className="flex-1">
-              <h4 className="text-sm font-bold text-white leading-tight">{toast.title}</h4>
-              <p className="text-xs text-text-secondary leading-tight mt-0.5">{toast.message}</p>
+              <h4 className="text-sm font-bold text-white dark:text-zinc-900 leading-tight">{toast.title}</h4>
+              <p className="text-xs text-zinc-400 dark:text-zinc-500 leading-tight mt-0.5">{toast.message}</p>
             </div>
 
             <button 

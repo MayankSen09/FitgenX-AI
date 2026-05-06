@@ -24,17 +24,37 @@ export const QUICK_ACTION_OPTIONS: QuickActionOption[] = [
  */
 interface SettingsState {
   quickActionPath: string;
+  tokens: number;
+  inventory: any[];
   setQuickActionPath: (path: string) => void;
+  setTokens: (tokens: number) => void;
+  addReward: (reward: any) => void;
 }
 
 export const useSettingsStore = create<SettingsState>((set) => {
   // Load from localStorage on init
-  const saved = localStorage.getItem('fitgenx-quick-action');
+  const savedPath = localStorage.getItem('fitgenx-quick-action');
+  const savedTokens = localStorage.getItem('fitgenx-tokens');
+  const savedInventory = localStorage.getItem('fitgenx-inventory');
+
   return {
-    quickActionPath: saved || '/creature',
+    quickActionPath: savedPath || '/creature',
+    tokens: savedTokens ? parseInt(savedTokens) : 2450,
+    inventory: savedInventory ? JSON.parse(savedInventory) : [],
     setQuickActionPath: (path: string) => {
       localStorage.setItem('fitgenx-quick-action', path);
       set({ quickActionPath: path });
+    },
+    setTokens: (tokens: number) => {
+      localStorage.setItem('fitgenx-tokens', tokens.toString());
+      set({ tokens });
+    },
+    addReward: (reward: any) => {
+      set((state) => {
+        const newInventory = [...state.inventory, { ...reward, redeemedAt: new Date().toLocaleDateString() }];
+        localStorage.setItem('fitgenx-inventory', JSON.stringify(newInventory));
+        return { inventory: newInventory };
+      });
     },
   };
 });

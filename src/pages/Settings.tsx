@@ -77,6 +77,26 @@ export default function Settings() {
           </div>
         </section>
 
+        {/* Rewards & Marketplace */}
+        <section className="space-y-4">
+          <h2 className="font-headline text-lg font-bold text-zinc-900 dark:text-zinc-50">Rewards</h2>
+          <button 
+            onClick={() => navigate('/store')}
+            className="w-full bg-zinc-900 dark:bg-white p-6 rounded-3xl flex items-center justify-between group active:scale-[0.98] transition-all shadow-xl shadow-zinc-900/10"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-white/10 dark:bg-zinc-900/10 flex items-center justify-center text-white dark:text-zinc-900">
+                <span className="material-symbols-outlined">shopping_bag</span>
+              </div>
+              <div className="text-left">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50 dark:text-zinc-400">Momentum Store</p>
+                <p className="text-sm font-bold text-white dark:text-zinc-900">Redeem Points & Discounts</p>
+              </div>
+            </div>
+            <span className="material-symbols-outlined text-white/30 dark:text-zinc-300 group-hover:translate-x-1 transition-transform">arrow_forward</span>
+          </button>
+        </section>
+
         {/* App Info Section */}
         <section className="space-y-3">
           <h2 className="font-headline text-lg font-bold text-zinc-900 dark:text-zinc-50">About</h2>

@@ -3,11 +3,28 @@ import { useNavigate } from 'react-router-dom';
 import { getGeminiResponse } from '../services/aiService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../store/useAppStore';
+import { toast } from '../components/common/Toast';
 
 interface Message {
   role: 'user' | 'model';
   content: string;
 }
+
+const PAGE_VARIANTS = {
+  initial: { opacity: 0, scale: 0.98, y: 10 },
+  animate: { 
+    opacity: 1, 
+    scale: 1, 
+    y: 0,
+    transition: { 
+      type: "spring",
+      damping: 25,
+      stiffness: 200,
+      staggerChildren: 0.05
+    }
+  },
+  exit: { opacity: 0, scale: 1.02, y: -10, transition: { duration: 0.2 } }
+};
 
 export default function AIAssistant() {
   const navigate = useNavigate();
@@ -48,7 +65,6 @@ export default function AIAssistant() {
     setInput('');
     setIsLoading(true);
 
-    // Format history for Gemini (Ensure it starts with 'user' role)
     let history = messages.map(m => ({
       role: m.role,
       parts: [{ text: m.content }]
@@ -61,21 +77,31 @@ export default function AIAssistant() {
       contextPrompt = `User Profile: Name: ${profile.name}, Age: ${profile.age}, Gender: ${profile.gender}, Height: ${profile.height}cm, Weight: ${profile.weight}kg, Goal: ${profile.focus}, Level: ${profile.level}, Preferences: ${profile.preferences.join(', ')}, Activity: ${profile.activityLevel}, History: ${profile.fitnessHistory}, Frequency: ${profile.workoutFrequency} days/week, Medical: ${profile.medicalConditions}. \n\nUser Message: ${messageText}`;
     }
 
-    const response = await getGeminiResponse(contextPrompt, history);
-    
-    setMessages(prev => [...prev, { role: 'model', content: response }]);
-    setIsLoading(false);
+    try {
+      const response = await getGeminiResponse(contextPrompt, history);
+      setMessages(prev => [...prev, { role: 'model', content: response }]);
+    } catch (error) {
+      toast.error("Signal lost. Re-establishing link...");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <>
-      {/* ─── Header ─── */}
-      <header className="fixed top-0 w-full max-w-[430px] left-1/2 -translate-x-1/2 z-50 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl flex flex-col items-center px-6 pt-4 pb-2">
-        <div className="w-full flex justify-between items-center mb-3">
+    <motion.div 
+      variants={PAGE_VARIANTS}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      className="bg-zinc-50/50 dark:bg-zinc-950 min-h-screen pb-40 overflow-x-hidden"
+    >
+      {/* Header Upgrade */}
+      <header className="fixed top-0 w-full max-w-[430px] left-1/2 -translate-x-1/2 z-50 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-2xl border-b border-zinc-100 dark:border-zinc-800 shadow-sm">
+        <div className="flex justify-between items-center px-8 py-5">
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate('/profile')}
-              className="w-10 h-10 rounded-full overflow-hidden bg-surface-container-high transition-transform active:scale-95 cursor-pointer border-none p-0 outline-none"
+              className="w-11 h-11 rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 shadow-sm transition-transform active:scale-95"
             >
               <img
                 alt="User Profile Avatar"
@@ -83,90 +109,88 @@ export default function AIAssistant() {
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNrzwzHCl7acrq1jEp7xQZwlilFbooGXO4CC3YRVZRFPz1v0D4KG_-8ndv8dN2ypKbj5mhkfHGtO5BlLA2X5rpMdcb3qL7CESHcXBohBwncJos50wqVNNSBTEWeBKZmFRA4SWpfd5ucTk0oCZtx3OGojJa2XsNre9yulpoe8fClnRiTE2saOMYFAtOOEK7r_CZrft8jiWolYdRjxkDCXnj9K-eKX5Bk7zTQwykX7s5AriWiRca8vwydKFaMDGPH6S2JRDT6kb_C2Q"
               />
             </button>
-            <h1 className="text-xl font-bold tracking-tighter text-zinc-900 dark:text-zinc-50 font-headline">
-              Coach
-            </h1>
+            <div className="flex flex-col">
+              <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white uppercase leading-none">Coach</h1>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 mt-1">AI Assistant</p>
+            </div>
           </div>
-          <button className="material-symbols-outlined text-zinc-900 dark:text-zinc-50 hover:opacity-80 transition-opacity active:scale-95 duration-200 p-2 bg-surface-container-low rounded-full">
-            notifications
+          <button onClick={() => toast.info("No active alerts.")} className="w-11 h-11 flex items-center justify-center rounded-xl bg-zinc-50 dark:bg-zinc-900 active:scale-90 transition-transform">
+            <span className="material-symbols-outlined text-zinc-900 dark:text-white text-xl">notifications</span>
           </button>
         </div>
 
-        {/* Mode Switcher */}
-        <div className="w-full bg-surface-container-high rounded-xl p-1 flex gap-1">
+        {/* Tab Segmented Control */}
+        <div className="flex mx-8 mb-5 p-1.5 bg-zinc-100 dark:bg-zinc-900/50 rounded-2xl">
           <button 
             onClick={() => setMode('chat')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all ${mode === 'chat' ? 'bg-white shadow-sm text-primary' : 'text-on-surface-variant'}`}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all duration-300 ${mode === 'chat' ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-400'}`}
           >
-            <span className="material-symbols-outlined text-sm">chat_bubble</span>
+            <span className="material-symbols-outlined text-[18px]">chat_bubble</span>
             Assistant
           </button>
           <button 
             onClick={() => setMode('plan')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all ${mode === 'plan' ? 'bg-white shadow-sm text-secondary' : 'text-on-surface-variant'}`}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all duration-300 ${mode === 'plan' ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-400'}`}
           >
-            <span className="material-symbols-outlined text-sm">calendar_month</span>
+            <span className="material-symbols-outlined text-[18px]">calendar_month</span>
             Planning
           </button>
         </div>
       </header>
 
-      {/* ─── Main Content ─── */}
-      <main className="pt-32 pb-32 px-5 mx-auto space-y-6 overflow-x-hidden max-w-[430px]">
-
-        {/* ─── Hero: Athlete Intelligence ─── */}
-        <section className="relative overflow-hidden rounded-2xl p-6 vitality-gradient min-h-[180px] flex flex-col justify-end shadow-lg shadow-secondary/20">
-          <div className="absolute top-0 right-0 p-6 opacity-20">
-            <span className="material-symbols-outlined text-[100px]" data-icon="neurology">neurology</span>
+      {/* Main Content */}
+      <main className="pt-[180px] px-6 max-w-[430px] mx-auto space-y-8">
+        
+        {/* Banner Card */}
+        <section className="relative overflow-hidden rounded-[2.5rem] p-8 bg-zinc-900 text-white shadow-2xl shadow-zinc-900/20 group">
+          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-700">
+            <span className="material-symbols-outlined text-[120px]">neurology</span>
           </div>
-          <div className="relative z-10 space-y-2">
-            <span className="font-label text-[0.6rem] uppercase tracking-widest font-bold text-white/80">
-              Athlete Intelligence
-            </span>
-            <h2 className="text-3xl font-extrabold text-white tracking-tight leading-tight font-headline">
+          <div className="relative z-10 space-y-4">
+            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full">
+              <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+              <span className="text-[8px] font-bold uppercase tracking-[0.2em] text-white/80">Biological Intelligence</span>
+            </div>
+            <h2 className="text-3xl font-bold tracking-tighter leading-tight font-display">
               Peak Performance<br />Analysis.
             </h2>
           </div>
         </section>
 
-        {/* ─── Athlete Intelligence Chat ─── */}
+        {/* Chat Interface */}
         <section className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-bold tracking-tight text-on-surface font-headline">AI Coach Chat</h2>
-            <div className="flex gap-3">
-              <button 
-                onClick={() => navigate('/planning')}
-                className="text-zinc-900 dark:text-zinc-50 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1 bg-zinc-900/5 dark:bg-white/5 px-3 py-1.5 rounded-lg"
-              >
-                <span className="material-symbols-outlined text-[14px]">edit_calendar</span>
-                Edit Schedule
-              </button>
-              <button className="text-secondary font-bold text-xs" onClick={() => setMessages([messages[0]])}>Clear History</button>
-            </div>
+          <div className="flex justify-between items-center px-1">
+            <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Neural Link Chat</h2>
+            <button 
+              onClick={() => { setMessages([messages[0]]); toast.info("History purged."); }}
+              className="text-[10px] font-bold text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 uppercase tracking-widest transition-colors"
+            >
+              Clear History
+            </button>
           </div>
           
-          <div className="bg-surface-container rounded-2xl flex flex-col h-[400px]">
+          <div className="bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-zinc-100 dark:border-zinc-800 flex flex-col shadow-sm overflow-hidden h-[450px]">
             <div 
               ref={scrollRef}
-              className="flex-grow overflow-y-auto p-5 space-y-5 scroll-smooth no-scrollbar"
+              className="flex-grow overflow-y-auto p-6 space-y-6 scroll-smooth no-scrollbar"
             >
-              <AnimatePresence>
+              <AnimatePresence initial={false}>
                 {messages.map((msg, i) => (
                   <motion.div 
                     key={i}
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'max-w-[90%]'}`}
+                    className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
                   >
                     {msg.role === 'model' && (
-                      <div className="w-8 h-8 rounded-full vitality-gradient flex items-center justify-center flex-shrink-0">
-                        <span className="material-symbols-outlined text-white text-xs" data-icon="smart_toy">smart_toy</span>
+                      <div className="w-9 h-9 rounded-xl bg-zinc-900 dark:bg-white flex items-center justify-center flex-shrink-0 shadow-lg">
+                        <span className="material-symbols-outlined text-white dark:text-zinc-900 text-lg">smart_toy</span>
                       </div>
                     )}
-                    <div className={`p-4 rounded-2xl shadow-sm text-sm leading-relaxed ${
+                    <div className={`max-w-[80%] p-4 rounded-[1.5rem] text-sm font-medium leading-relaxed shadow-sm ${
                       msg.role === 'user' 
-                        ? 'bg-primary text-white rounded-tr-none' 
-                        : 'bg-white text-on-surface-variant rounded-tl-none'
+                        ? 'bg-zinc-900 text-white rounded-tr-none' 
+                        : 'bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-tl-none border border-zinc-100 dark:border-zinc-800'
                     }`}>
                       <p>{msg.content}</p>
                     </div>
@@ -176,50 +200,40 @@ export default function AIAssistant() {
                   <motion.div 
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="flex gap-3 max-w-[90%]"
+                    className="flex gap-3"
                   >
-                    <div className="w-8 h-8 rounded-full vitality-gradient flex items-center justify-center flex-shrink-0 animate-pulse">
-                      <span className="material-symbols-outlined text-white text-xs">smart_toy</span>
+                    <div className="w-9 h-9 rounded-xl bg-zinc-900 dark:bg-white flex items-center justify-center flex-shrink-0 animate-pulse shadow-lg">
+                      <span className="material-symbols-outlined text-white dark:text-zinc-900 text-lg">smart_toy</span>
                     </div>
-                    <div className="bg-white p-4 rounded-2xl rounded-tl-none shadow-sm flex gap-1">
-                       <span className="w-1.5 h-1.5 bg-secondary rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                       <span className="w-1.5 h-1.5 bg-secondary rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                       <span className="w-1.5 h-1.5 bg-secondary rounded-full animate-bounce"></span>
+                    <div className="bg-zinc-50 dark:bg-zinc-800 p-4 rounded-[1.5rem] rounded-tl-none border border-zinc-100 dark:border-zinc-800 flex gap-1.5 items-center">
+                       <span className="w-1.5 h-1.5 bg-zinc-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                       <span className="w-1.5 h-1.5 bg-zinc-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                       <span className="w-1.5 h-1.5 bg-zinc-400 rounded-full animate-bounce"></span>
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
 
-            {/* Quick Replies */}
-            {messages.length === 1 && (
-               <div className="flex flex-wrap gap-2 px-5 p-3 border-t border-outline-variant/5">
-                {mode === 'chat' ? (
-                  [ "What's my HRV?", "Suggest a warm-up", "How is my recovery?"].map(suggestion => (
+            {/* Input Area */}
+            <div className="p-6 bg-zinc-50/50 dark:bg-zinc-900/50 border-t border-zinc-100 dark:border-zinc-800">
+              {messages.length === 1 && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {(mode === 'chat' 
+                    ? ["What's my HRV?", "Suggest warm-up", "Recovery status"] 
+                    : ["4-week strength", "HIIT routine", "Mobility plan"]
+                  ).map(suggestion => (
                     <button 
                       key={suggestion}
                       onClick={() => handleSend(suggestion)}
-                      className="bg-white/50 border border-outline-variant/10 px-3 py-2 rounded-full text-[10px] font-bold text-on-surface-variant hover:bg-secondary-container transition-colors active:scale-95"
+                      className="bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 px-4 py-2 rounded-full text-[10px] font-bold text-zinc-500 hover:bg-zinc-900 hover:text-white dark:hover:bg-white dark:hover:text-zinc-900 transition-all active:scale-95 shadow-sm"
                     >
                       {suggestion}
                     </button>
-                  ))
-                ) : (
-                  [ "Create 4-week plan", "Bodyweight routine", "Hypertrophy focus"].map(suggestion => (
-                    <button 
-                      key={suggestion}
-                      onClick={() => handleSend(suggestion)}
-                      className="bg-white/50 border border-outline-variant/10 px-3 py-2 rounded-full text-[10px] font-bold text-secondary hover:bg-secondary-container transition-colors active:scale-95"
-                    >
-                      {suggestion}
-                    </button>
-                  ))
-                )}
-              </div>
-            )}
-
-            {/* Input */}
-            <div className="p-4 pt-2">
+                  ))}
+                </div>
+              )}
+              
               <form 
                 onSubmit={(e) => { e.preventDefault(); handleSend(); }}
                 className="relative"
@@ -227,37 +241,50 @@ export default function AIAssistant() {
                 <input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  className="w-full bg-white border-none rounded-full py-4 pl-6 pr-14 shadow-md focus:ring-2 focus:ring-secondary/20 transition-all placeholder:text-outline text-sm"
-                  placeholder={mode === 'chat' ? "Ask your coach anything..." : "Describe the plan you need..."}
+                  className="w-full bg-white dark:bg-zinc-800 border-none rounded-2xl py-4 pl-6 pr-14 shadow-sm focus:ring-2 focus:ring-zinc-900/5 dark:focus:ring-white/5 transition-all placeholder:text-zinc-400 text-sm font-medium"
+                  placeholder={mode === 'chat' ? "Consult your coach..." : "Define your objectives..."}
                   type="text"
                 />
                 <button 
                   type="submit"
                   disabled={isLoading || !input.trim()}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center active:scale-90 transition-all disabled:opacity-50 disabled:grayscale"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl flex items-center justify-center active:scale-90 transition-all disabled:opacity-30 shadow-lg"
                 >
-                  <span className="material-symbols-outlined text-lg" data-icon="send">send</span>
+                  <span className="material-symbols-outlined text-lg">send</span>
                 </button>
               </form>
             </div>
           </div>
         </section>
 
-        {/* ─── Recovery & Smart Insight (Compact) ─── */}
-        <div className="grid grid-cols-2 gap-4">
-           <section className="bg-surface-container-low rounded-2xl p-5 space-y-2">
-              <span className="material-symbols-outlined text-secondary text-xl">vitals</span>
-              <p className="text-[10px] uppercase tracking-widest font-bold text-outline">Recovery</p>
-              <div className="text-3xl font-extrabold font-headline text-on-surface line-clamp-1">18<span className="text-xs ml-1">h</span></div>
-           </section>
-           <section className="bg-surface-container-low rounded-2xl p-5 space-y-2">
-              <span className="material-symbols-outlined text-tertiary text-xl">bolt</span>
-              <p className="text-[10px] uppercase tracking-widest font-bold text-outline">Efficiency</p>
-              <div className="text-3xl font-extrabold font-headline text-on-surface">+12<span className="text-xs ml-1">%</span></div>
-           </section>
+        {/* Action Grid */}
+        <div className="grid grid-cols-2 gap-4 pb-10">
+          <button onClick={() => navigate('/planning')} className="col-span-2 p-5 bg-zinc-900 dark:bg-white rounded-[2rem] flex items-center justify-between group active:scale-[0.98] transition-all shadow-xl shadow-zinc-900/10">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-white/10 dark:bg-zinc-900/10 flex items-center justify-center text-white dark:text-zinc-900">
+                <span className="material-symbols-outlined">edit_calendar</span>
+              </div>
+              <div className="text-left">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 dark:text-zinc-400">Weekly Schedule</p>
+                <p className="text-sm font-bold text-white dark:text-zinc-900">Manage Training Plan</p>
+              </div>
+            </div>
+            <span className="material-symbols-outlined text-white/30 dark:text-zinc-300 group-hover:translate-x-1 transition-transform">arrow_forward</span>
+          </button>
+
+          <div className="bg-white dark:bg-zinc-900 rounded-[2rem] p-6 border border-zinc-100 dark:border-zinc-800 shadow-sm space-y-2">
+            <span className="material-symbols-outlined text-zinc-400 text-xl">vitals</span>
+            <p className="text-[9px] uppercase tracking-[0.2em] font-bold text-zinc-400">Recovery</p>
+            <div className="text-3xl font-bold font-display text-zinc-900 dark:text-white">18<span className="text-xs ml-1 opacity-40">h</span></div>
+          </div>
+          <div className="bg-white dark:bg-zinc-900 rounded-[2rem] p-6 border border-zinc-100 dark:border-zinc-800 shadow-sm space-y-2">
+            <span className="material-symbols-outlined text-zinc-400 text-xl">bolt</span>
+            <p className="text-[9px] uppercase tracking-[0.2em] font-bold text-zinc-400">Efficiency</p>
+            <div className="text-3xl font-bold font-display text-zinc-900 dark:text-white">+12<span className="text-xs ml-1 opacity-40">%</span></div>
+          </div>
         </div>
 
       </main>
-    </>
+    </motion.div>
   );
 }

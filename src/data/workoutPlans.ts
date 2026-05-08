@@ -67,7 +67,7 @@ export const WORKOUT_PLANS: WorkoutPlan[] = [
     duration: '45 min',
     calorieEstimate: 400,
     exerciseIds: ['barbell-squat', 'flat-bench-press', 'barbell-row', 'overhead-press', 'walking-lunges', 'plank'],
-    image: 'https://images.unsplash.com/photo-1534368786749-b63e05c92717?w=800&auto=format',
+    image: 'https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=800&auto=format',
   },
   {
     id: 'core-crusher',

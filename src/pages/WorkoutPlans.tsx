@@ -146,6 +146,7 @@ export default function WorkoutPlans() {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     key={ex.id}
+                    onClick={() => navigate(`/exercise-detail/${ex.id}`)}
                     className="bg-surface-container p-4 rounded-2xl flex items-center justify-between group hover:bg-surface-container-high transition-colors cursor-pointer border border-outline-variant/5"
                   >
                     <div className="flex items-center gap-4">

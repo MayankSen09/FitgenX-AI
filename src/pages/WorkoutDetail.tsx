@@ -32,7 +32,13 @@ export default function WorkoutDetail() {
         <button onClick={() => navigate(-1)} className="p-3 bg-white rounded-full text-text-secondary shadow-sm">
           <ArrowLeft size={24} />
         </button>
-        <button className="p-3 bg-white rounded-full text-text-secondary shadow-sm">
+        <button 
+          onClick={() => {
+            navigator.clipboard.writeText(window.location.href);
+            import('../components/common/Toast').then(({ toast }) => toast.success("Plan link copied to clipboard!"));
+          }} 
+          className="p-3 bg-white rounded-full text-text-secondary shadow-sm active:scale-90 transition-transform"
+        >
           <Share2 size={24} />
         </button>
       </div>
@@ -45,7 +51,7 @@ export default function WorkoutDetail() {
          />
          <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-transparent to-transparent"></div>
          <div className="absolute bottom-8 left-8 right-8">
-            <span className="bg-tertiary text-primary text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-4 inline-block">{plan.type}</span>
+            <span className="bg-white/20 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-4 inline-block border border-white/10">{plan.type}</span>
             <h1 className="text-4xl font-extrabold text-white mb-2 italic uppercase">{plan.name}</h1>
             <p className="text-white/60 text-sm font-medium">{plan.duration} • {plan.difficulty} • ~{plan.calorieEstimate} kcal</p>
          </div>
@@ -70,15 +76,23 @@ export default function WorkoutDetail() {
       </div>
 
       {/* Description */}
-      <div className="px-2 mb-8">
-        <p className="text-sm text-on-surface-variant leading-relaxed">{plan.description}</p>
+      <div className="px-6 mb-10">
+        <div className="pl-4 border-l-2 border-zinc-900/10 dark:border-white/10">
+          <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed font-medium italic">
+            {plan.description}
+          </p>
+        </div>
       </div>
 
       <section className="section">
          <h3 className="text-xs font-bold text-text-tertiary uppercase tracking-widest mb-6">Exercises ({exercises.length})</h3>
          <div className="flex flex-col gap-4 mb-32">
             {exercises.map((ex, i) => (
-               <div key={ex.id} className="card p-5 group flex items-center justify-between hover:bg-bg-elevated transition-colors cursor-pointer">
+               <div 
+                 key={ex.id} 
+                 onClick={() => navigate(`/exercise-detail/${ex.id}`)}
+                 className="card p-5 group flex items-center justify-between hover:bg-bg-elevated transition-colors cursor-pointer"
+               >
                   <div className="flex items-center gap-4">
                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-sm flex-shrink-0">
                        {i + 1}

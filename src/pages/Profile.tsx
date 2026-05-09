@@ -127,6 +127,23 @@ export default function Profile() {
             )}
           </section>
         )}
+        {/* Momentum Store / Rewards */}
+        <section 
+          onClick={() => navigate('/store')}
+          className="bg-zinc-900 dark:bg-white p-6 rounded-[2.5rem] flex items-center justify-between group cursor-pointer active:scale-[0.98] transition-all shadow-xl shadow-zinc-900/10"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-white/10 dark:bg-zinc-900/10 flex items-center justify-center text-white dark:text-zinc-900">
+              <span className="material-symbols-outlined text-2xl">shopping_bag</span>
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50 dark:text-zinc-400 leading-none mb-1">Momentum Store</p>
+              <h3 className="text-sm font-bold text-white dark:text-zinc-900">Redeem Points for Rewards</h3>
+            </div>
+          </div>
+          <span className="material-symbols-outlined text-white/30 dark:text-zinc-300 group-hover:translate-x-1 transition-transform">arrow_forward</span>
+        </section>
+
         {/* Share Progress Card */}
         <section className="bg-primary/5 p-6 rounded-3xl border border-primary/10 flex items-center justify-between group cursor-pointer active:scale-[0.98] transition-transform">
           <div className="flex items-center gap-4">

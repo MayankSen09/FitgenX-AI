@@ -171,8 +171,14 @@ export default function CalendarView() {
             </div>
           ) : (
             <div className="space-y-3">
-              <h4 className="text-[0.6rem] font-bold uppercase tracking-widest text-outline">Planned Workout</h4>
-              {plannedWorkout && (
+              <div className="flex items-center justify-between">
+                <h4 className="text-[0.6rem] font-bold uppercase tracking-widest text-outline">Planned Workout</h4>
+                <button onClick={() => navigate('/planning')} className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-1 active:scale-95 transition-transform">
+                  <span className="material-symbols-outlined text-[14px]">edit_calendar</span>
+                  Edit Plan
+                </button>
+              </div>
+              {plannedWorkout ? (
                 <motion.div 
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -192,6 +198,12 @@ export default function CalendarView() {
                   </div>
                   <span className="material-symbols-outlined text-zinc-400 ml-auto group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">arrow_forward_ios</span>
                 </motion.div>
+              ) : (
+                <div className="bg-surface-container-low p-6 rounded-2xl border border-outline-variant/5 text-center">
+                  <span className="material-symbols-outlined text-3xl text-zinc-300 dark:text-zinc-600 block mb-2">event_available</span>
+                  <p className="text-sm text-zinc-500 font-medium">Rest Day</p>
+                  <button onClick={() => navigate('/planning')} className="text-xs text-zinc-400 mt-2 underline">Change plan</button>
+                </div>
               )}
             </div>
           )}

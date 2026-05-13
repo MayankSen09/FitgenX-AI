@@ -20,7 +20,7 @@ export default function BottomNav() {
   const path = location.pathname;
   const { quickActionPath, setQuickActionPath } = useSettingsStore();
   const quickOption = QUICK_ACTION_OPTIONS.find((o) => o.path === quickActionPath);
-  const { getStage, getProgress } = useCreatureStore();
+  const { getStage } = useCreatureStore();
   const stage = getStage();
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);

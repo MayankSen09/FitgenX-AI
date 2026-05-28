@@ -8,6 +8,7 @@ const QUICK_ACTIONS = [
   { label: 'Companion', icon: 'pets', path: '/creature' },
   { label: 'AI Coach', icon: 'smart_toy', path: '/ai-coach' },
   { label: 'Track Run', icon: 'directions_run', path: '/track' },
+  { label: 'Journey', icon: 'route', path: '/journey' },
   { label: 'Workouts', icon: 'fitness_center', path: '/workouts' },
   { label: 'Timer', icon: 'timer', path: '/timer' },
   { label: 'Challenges', icon: 'emoji_events', path: '/challenges' },

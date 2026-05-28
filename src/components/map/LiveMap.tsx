@@ -36,24 +36,48 @@ function haversineDistance(
 
 function MapController({ center }: { center: [number, number] }) {
   const map = useMap();
+  const [userInteracting, setUserInteracting] = useState(false);
   const isFirstRender = useRef(true);
 
   useEffect(() => {
     // Hide attribution for clean UI
     const attribution = document.querySelector('.leaflet-control-attribution');
-    if (attribution) {
-      attribution.remove();
-    }
-  }, []);
+    if (attribution) attribution.remove();
+
+    const handleInteraction = () => setUserInteracting(true);
+    map.on('dragstart', handleInteraction);
+    map.on('zoomstart', handleInteraction);
+    
+    return () => {
+      map.off('dragstart', handleInteraction);
+      map.off('zoomstart', handleInteraction);
+    };
+  }, [map]);
 
   useEffect(() => {
     if (isFirstRender.current) {
       map.setView(center, 16);
       isFirstRender.current = false;
-    } else {
+    } else if (!userInteracting) {
       map.panTo(center, { animate: true, duration: 0.5 });
     }
-  }, [map, center]);
+  }, [map, center, userInteracting]);
+
+  if (userInteracting) {
+    return (
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setUserInteracting(false);
+          map.setView(center, 16);
+        }}
+        className="absolute top-24 right-4 z-[400] bg-zinc-900/90 backdrop-blur-md text-white border border-white/10 rounded-full px-3 py-1.5 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-2xl transition-all hover:bg-zinc-800"
+      >
+        <span className="material-symbols-outlined text-sm text-primary">my_location</span>
+        Recenter
+      </button>
+    );
+  }
 
   return null;
 }

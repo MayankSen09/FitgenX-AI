@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Share2, Bell, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Share2, Bell } from 'lucide-react';
 import { toast } from '../components/common/Toast';
 
 export default function Analytics() {

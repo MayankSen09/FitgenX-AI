@@ -77,9 +77,25 @@ export default function Settings() {
           </div>
         </section>
 
-        {/* Rewards & Marketplace */}
+        {/* Premium Upgrade & Rewards */}
         <section className="space-y-4">
-          <h2 className="font-headline text-lg font-bold text-zinc-900 dark:text-zinc-50">Rewards</h2>
+          <h2 className="font-headline text-lg font-bold text-zinc-900 dark:text-zinc-50">Premium & Rewards</h2>
+          <button 
+            onClick={() => navigate('/plans')}
+            className="w-full bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 p-6 rounded-3xl flex items-center justify-between group active:scale-[0.98] transition-all shadow-xl shadow-blue-500/20 mb-3"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-white">
+                <span className="material-symbols-outlined">workspace_premium</span>
+              </div>
+              <div className="text-left">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70">Elite Tier</p>
+                <p className="text-sm font-bold text-white">Upgrade to Premium</p>
+              </div>
+            </div>
+            <span className="material-symbols-outlined text-white/50 group-hover:translate-x-1 transition-transform">arrow_forward</span>
+          </button>
+
           <button 
             onClick={() => navigate('/store')}
             className="w-full bg-zinc-900 dark:bg-white p-6 rounded-3xl flex items-center justify-between group active:scale-[0.98] transition-all shadow-xl shadow-zinc-900/10"

@@ -3,6 +3,13 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { useAppStore } from '../store/useAppStore';
 import { getTodaysWorkouts } from '../data/workoutPlans';
+import { calculateChurnRisk } from '../utils/churnRisk';
+import { useChurnStore } from '../stores/churnStore';
+import { useHydrationStore } from '../stores/hydrationStore';
+import { detectOvertraining } from '../utils/overtrainingDetector';
+import ProteinTrackerWidget from '../components/ProteinTrackerWidget';
+import RoadmapProgressWidget from '../components/RoadmapProgressWidget';
+import { useEffect, useState } from 'react';
 
 /**
  * Main dashboard component showing user stats, streaks, and today's workout plans.
@@ -32,6 +39,29 @@ export default function Dashboard() {
     return { label, date: dateObj.getDate(), isToday, isPast, hasWorkout };
   });
 
+  const churnStore = useChurnStore();
+  const { currentIntake, dailyTarget, addIntake } = useHydrationStore();
+
+  const [intervention, setIntervention] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Churn checks once per 24 hours
+    const risk = calculateChurnRisk(workoutHistory);
+    const lastCheck = churnStore.lastChurnCheck;
+    const moreThanDay = !lastCheck || (Date.now() - new Date(lastCheck).getTime() > 24 * 60 * 60 * 1000);
+
+    if (risk.level === 'high' && moreThanDay) {
+      const types = ['pet_alert', 'pro_trial', 'buddy_nudge'];
+      // Rotate randomly
+      const randType = types[Math.floor(Math.random() * types.length)];
+      setIntervention(randType);
+      churnStore.addIntervention(randType);
+      churnStore.markCheck();
+    }
+  }, [workoutHistory]);
+
+  const overtraining = detectOvertraining(workoutHistory);
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -56,12 +86,13 @@ export default function Dashboard() {
             <h1 className="text-xl font-extrabold tracking-tighter text-zinc-900 dark:text-zinc-50 font-headline">Welcome, {userName}</h1>
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          <button className="material-symbols-outlined text-zinc-900 dark:text-zinc-50 hover:opacity-80 transition-opacity p-2 bg-surface-container-low rounded-full active:scale-95">notifications</button>
+        <div className="flex items-center gap-3">
+          <button onClick={() => navigate('/plans')} className="material-symbols-outlined text-amber-500 hover:opacity-80 transition-opacity p-2 bg-surface-container-low rounded-full active:scale-95">workspace_premium</button>
+          <button onClick={() => navigate('/notifications')} className="material-symbols-outlined text-zinc-900 dark:text-zinc-50 hover:opacity-80 transition-opacity p-2 bg-surface-container-low rounded-full active:scale-95">notifications</button>
         </div>
       </header>
 
-      <main className="mt-24 px-6 max-w-[430px] mx-auto space-y-10">
+      <main className="mt-24 px-6 max-w-[430px] mx-auto space-y-6">
 
         {/* ─── Activity Streak ─── */}
         <section>
@@ -163,6 +194,110 @@ export default function Dashboard() {
             </div>
           </motion.div>
         </div>
+
+        {/* ─── Premium Features Navigation ─── */}
+        <div className="grid grid-cols-4 gap-2 bg-surface-container-low border border-outline-variant/10 dark:bg-zinc-900/40 dark:border-white/5 p-3 rounded-3xl select-none">
+          <button
+            onClick={() => navigate('/buddy')}
+            className="p-2 bg-white dark:bg-zinc-950/60 hover:bg-zinc-50 dark:hover:bg-zinc-800/80 border border-outline-variant/10 dark:border-white/5 rounded-2xl flex flex-col items-center gap-1.5 active:scale-95 transition-all text-center"
+          >
+            <span className="material-symbols-outlined text-secondary dark:text-primary text-base">diversity_1</span>
+            <span className="text-[9px] font-black uppercase tracking-wider text-zinc-700 dark:text-white/70">Buddy</span>
+          </button>
+          <button
+            onClick={() => navigate('/barcode')}
+            className="p-2 bg-white dark:bg-zinc-950/60 hover:bg-zinc-50 dark:hover:bg-zinc-800/80 border border-outline-variant/10 dark:border-white/5 rounded-2xl flex flex-col items-center gap-1.5 active:scale-95 transition-all text-center"
+          >
+            <span className="material-symbols-outlined text-secondary dark:text-primary text-base">qr_code_scanner</span>
+            <span className="text-[9px] font-black uppercase tracking-wider text-zinc-700 dark:text-white/70">Scan</span>
+          </button>
+          <button
+            onClick={() => navigate('/measurements')}
+            className="p-2 bg-white dark:bg-zinc-950/60 hover:bg-zinc-50 dark:hover:bg-zinc-800/80 border border-outline-variant/10 dark:border-white/5 rounded-2xl flex flex-col items-center gap-1.5 active:scale-95 transition-all text-center"
+          >
+            <span className="material-symbols-outlined text-secondary dark:text-primary text-base">straighten</span>
+            <span className="text-[9px] font-black uppercase tracking-wider text-zinc-700 dark:text-white/70">Stats</span>
+          </button>
+          <button
+            onClick={() => navigate('/coaches')}
+            className="p-2 bg-white dark:bg-zinc-950/60 hover:bg-zinc-50 dark:hover:bg-zinc-800/80 border border-outline-variant/10 dark:border-white/5 rounded-2xl flex flex-col items-center gap-1.5 active:scale-95 transition-all text-center"
+          >
+            <span className="material-symbols-outlined text-secondary dark:text-primary text-base">support_agent</span>
+            <span className="text-[9px] font-black uppercase tracking-wider text-zinc-700 dark:text-white/70">Coach</span>
+          </button>
+        </div>
+
+        {/* ─── Hydration Widget ─── */}
+        <div className="bg-blue-50/40 dark:bg-blue-950/20 p-4 rounded-3xl border border-blue-200/40 dark:border-blue-800/20 flex items-center justify-between select-none">
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-blue-500 animate-pulse">water_drop</span>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-800 dark:text-blue-400">Daily Hydration Target</p>
+              <p className="text-xl font-black font-headline text-zinc-900 dark:text-zinc-50 mt-1 tabular-nums leading-none">
+                {currentIntake} <span className="text-xs text-white/30 font-semibold tracking-wide">/ {dailyTarget} ml</span>
+              </p>
+              <div className="w-40 bg-zinc-800 h-1 rounded-full mt-2 overflow-hidden flex">
+                <div className="bg-blue-500 h-full transition-all duration-300" style={{ width: `${Math.min(100, (currentIntake / dailyTarget) * 100)}%` }} />
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => addIntake(250)}
+              className="w-11 h-11 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-300 rounded-2xl flex items-center justify-center font-black text-xs border border-blue-500/20 active:scale-95 transition-all"
+            >
+              +250
+            </button>
+            <button
+              onClick={() => addIntake(500)}
+              className="w-11 h-11 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-300 rounded-2xl flex items-center justify-center font-black text-xs border border-blue-500/20 active:scale-95 transition-all"
+            >
+              +500
+            </button>
+          </div>
+        </div>
+
+        {/* ─── Roadmap Progress Widget ─── */}
+        <RoadmapProgressWidget />
+
+        {/* ─── Protein Tracker Widget ─── */}
+        <ProteinTrackerWidget />
+
+        {/* ─── Behavioral Insights & Interventions ─── */}
+        {intervention === 'pet_alert' && (
+          <div className="bg-amber-50 dark:bg-amber-950/40 p-4 rounded-3xl border border-amber-200/50 dark:border-amber-800/40 flex items-start gap-3 shadow-sm select-none">
+            <span className="material-symbols-outlined text-amber-600 dark:text-amber-400">pets</span>
+            <div className="flex-1">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-800 dark:text-amber-400">Creature Needs You</p>
+              <p className="text-xs font-semibold text-amber-900/80 dark:text-amber-200/80 mt-0.5">Your virtual creature hasn't seen you in a bit and is missing you. Start a quick session today!</p>
+            </div>
+          </div>
+        )}
+
+        {intervention === 'pro_trial' && (
+          <div className="bg-indigo-50 dark:bg-indigo-950/40 p-4 rounded-3xl border border-indigo-200/50 dark:border-indigo-800/40 flex items-start gap-3 shadow-sm select-none">
+            <span className="material-symbols-outlined text-indigo-600 dark:text-indigo-400">workspace_premium</span>
+            <div className="flex-1">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-800 dark:text-indigo-400">Streak Saver Shield Active</p>
+              <p className="text-xs font-semibold text-indigo-900/80 dark:text-indigo-200/80 mt-0.5">Enjoy a 7-day Pro trial. Unlock all the elite features for free!</p>
+            </div>
+          </div>
+        )}
+
+
+        {/* ─── Overtraining Alert ─── */}
+        {overtraining && (
+          <div className="bg-rose-50 dark:bg-rose-950/40 p-4 rounded-3xl border border-rose-200/50 dark:border-rose-800/40 flex items-start gap-3 shadow-sm select-none">
+            <span className="material-symbols-outlined text-rose-600 dark:text-rose-400">warning</span>
+            <div className="flex-1">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-800 dark:text-rose-400">Overtraining Risk</p>
+              <p className="text-sm font-black font-headline text-rose-900 dark:text-rose-50 tracking-tight mt-1">Take it easy today</p>
+              <p className="text-xs font-semibold text-rose-900/80 dark:text-rose-200/80 mt-0.5">{overtraining.reason}</p>
+              <p className="text-xs font-semibold text-rose-900/80 dark:text-rose-200/80 mt-1">{overtraining.recommendation}</p>
+            </div>
+          </div>
+        )}
+
 
         {/* ─── Today's Routine ─── */}
         <section>

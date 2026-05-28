@@ -20,6 +20,14 @@ import CalendarView from './pages/CalendarView.tsx';
 import PlanningView from './pages/PlanningView.tsx';
 import Marketplace from './pages/Marketplace.tsx';
 import ExerciseDetail from './pages/ExerciseDetail.tsx';
+import Notifications from './pages/Notifications.tsx';
+import PremiumPlans from './pages/PremiumPlans.tsx';
+import BuddyMatch from './pages/BuddyMatch.tsx';
+import BarcodeMealScanner from './pages/BarcodeMealScanner.tsx';
+import MeasurementsPage from './pages/MeasurementsPage.tsx';
+import CoachMarketplace from './pages/CoachMarketplace.tsx';
+import RoadmapPage from './pages/RoadmapPage.tsx';
+import CustomRoadmapBuilder from './pages/CustomRoadmapBuilder.tsx';
 import { ToastContainer } from './components/common/Toast.tsx';
 import BottomNav from './components/layout/BottomNav.tsx';
 
@@ -51,6 +59,14 @@ export default function App() {
           <Route path="/planning" element={<PlanningView />} />
           <Route path="/store" element={<Marketplace />} />
           <Route path="/exercise-detail/:id" element={<ExerciseDetail />} />
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/plans" element={<PremiumPlans />} />
+          <Route path="/buddy" element={<BuddyMatch />} />
+          <Route path="/barcode" element={<BarcodeMealScanner />} />
+          <Route path="/measurements" element={<MeasurementsPage />} />
+          <Route path="/coaches" element={<CoachMarketplace />} />
+          <Route path="/journey" element={<RoadmapPage />} />
+          <Route path="/journey/builder" element={<CustomRoadmapBuilder />} />
         </Routes>
       </AnimatePresence>
       {showNav && <BottomNav />}

@@ -16,6 +16,7 @@ export const QUICK_ACTION_OPTIONS: QuickActionOption[] = [
   { label: 'Analytics', icon: 'analytics', path: '/analytics' },
   { label: 'Social', icon: 'group', path: '/social' },
   { label: 'Profile', icon: 'person', path: '/profile' },
+  { label: 'Journey', icon: 'route', path: '/journey' },
 ];
 
 /**

@@ -4,58 +4,25 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import dotenv from 'dotenv';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import {
+  INITIAL_CHAT_PROMPT,
+  MAX_HISTORY_ITEMS,
+  sanitizePrompt,
+  isRateLimited,
+  getClientIp,
+  isOriginAllowed,
+} from '../src/lib/chatSecurity.ts';
+
+// Note: In-memory rate limiting resets on serverless cold starts; it provides single-container abuse mitigation, not distributed rate limiting.
 
 dotenv.config({ path: join(dirname(fileURLToPath(import.meta.url)), '..', '.env') });
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const MAX_PROMPT_LENGTH = 20000;
-const MAX_HISTORY_ITEMS = 20;
-
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-
-function sanitizePrompt(prompt: string): string {
-  return prompt
-    .slice(0, MAX_PROMPT_LENGTH)
-    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
-    .trim();
-}
-
-function isRateLimited(ip: string, limit: number, windowMs: number): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + windowMs });
-    return false;
-  }
-
-  if (entry.count >= limit) {
-    return true;
-  }
-
-  entry.count++;
-  return false;
-}
-
-function getClientIp(req: express.Request): string {
-  const fwd = req.headers['x-forwarded-for'];
-  if (typeof fwd === 'string') return fwd.split(',')[0].trim();
-  if (Array.isArray(fwd)) return String(fwd[0]).split(',')[0].trim();
-  return (req.headers['x-real-ip'] as string) || req.socket.remoteAddress || 'unknown';
-}
-
-const INITIAL_CHAT_PROMPT = `You are the "FitGenX AI Coach", a premium, high-performance athletic intelligence assistant for the FitGenX app. Your tone is professional, encouraging, data-driven, and slightly futuristic. You specialize in powerlifting, hypertrophy, and cardiovascular optimization. Keep responses concise and formatted for a mobile chat interface (use short paragraphs or bullet points). Always refer to the user as "Athlete".`;
-
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || ALLOWED_ORIGINS.length === 0 || ALLOWED_ORIGINS.includes(origin)) {
-      callback(null, true);
-    } else if (origin.endsWith('.vercel.app')) {
-      callback(null, true);
-    } else if (origin.includes('localhost')) {
+    if (!origin || isOriginAllowed(origin)) {
       callback(null, true);
     } else {
       callback(new Error('CORS not allowed'));
@@ -79,6 +46,23 @@ if (!API_KEY) {
   console.error('WARNING: Gemini API Key is missing. Ensure VITE_GEMINI_API_KEY or GEMINI_API_KEY is set in your .env file.');
 }
 
+app.get('/', (_req, res) => {
+  res.json({
+    status: 'online',
+    message: 'FitGenX API Server is running. Access the web app at http://localhost:5173',
+    frontendUrl: 'http://localhost:5173',
+    version: '2.0.0',
+    endpoints: {
+      chat: 'POST /api/chat',
+      health: 'GET /health',
+    },
+  });
+});
+
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 app.post('/api/chat', (req, res) => {
   const clientIp = getClientIp(req);
   if (isRateLimited(clientIp, 20, 60_000)) {
@@ -91,6 +75,8 @@ app.post('/api/chat', (req, res) => {
 
   const rawPrompt = req.body?.prompt;
   const history: unknown[] = req.body?.history ?? [];
+  const mode = req.body?.mode === 'plan' ? 'plan' : 'chat';
+  const maxOutputTokens = mode === 'plan' ? 2500 : 500;
 
   if (!rawPrompt || typeof rawPrompt !== 'string' || !rawPrompt.trim()) {
     return res.status(400).json({ error: 'Prompt is required' });
@@ -114,9 +100,9 @@ app.post('/api/chat', (req, res) => {
       ];
 
       const chat = model.startChat({
-        history: chatHistory,
+        history: chatHistory as any,
         generationConfig: {
-          maxOutputTokens: 500,
+          maxOutputTokens,
         },
       });
 
@@ -124,7 +110,9 @@ app.post('/api/chat', (req, res) => {
       const responseText = await result.response.text();
 
       res.json({ response: responseText });
-    } catch {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown generation failure';
+      console.error(`[Server/Chat Error] Gemini model generation failed (${mode} mode): ${errorMessage}`);
       res.status(500).json({ error: 'Failed to generate response' });
     }
   })();

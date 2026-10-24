@@ -1,543 +1,1084 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { MapContainer, TileLayer, Polyline, useMap } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
+import { motion } from 'framer-motion';
 import BottomNav from '../components/layout/BottomNav';
 import LiveMap from '../components/map/LiveMap';
+import { useAppStore } from '../store/useAppStore';
+import { useSocialStore } from '../stores/socialStore';
 import { toast } from '../components/common/Toast';
-import { Share2, X, Download, Award, Image } from 'lucide-react';
-import MoodModal from '../components/MoodModal';
+import type { Activity, ActivityType, KmSplit, RoutePoint } from '../types/activity';
+import {
+  formatTime,
+  formatPace,
+  computeAvgPaceSecPerKm,
+  calculateRollingPace,
+  evaluateSplits,
+  getBestSplit,
+  downsampleRoute,
+  calculateHonestCalories,
+  calculateActivityXP,
+  calculateSessionTimestamps,
+} from '../utils/activityCalculations';
+import {
+  playBeep,
+  triggerHaptic,
+  announceKilometerSplit,
+  speakAnnouncement,
+} from '../utils/audioCues';
 
-function ModalMapController({ center }: { center: [number, number] }) {
-  const map = useMap();
-  useEffect(() => {
-    setTimeout(() => {
-      map.invalidateSize();
-      map.setView(center, 15);
-    }, 150);
-  }, [map, center]);
-  return null;
+const AUTOSAVE_STORAGE_KEY = 'fitgenx_active_run_session';
+
+interface SavedRunSession {
+  version: 1;
+  savedAt: number;
+  activityType: ActivityType;
+  hasStarted: boolean;
+  isPaused: boolean;
+  startTime: number;
+  pausedAt: number | null;
+  totalPausedMs: number;
+  distanceM: number;
+  elevationGainM: number | null;
+  routePoints: RoutePoint[];
+  splits: KmSplit[];
+  targetPaceSecPerKm: number | null;
+  isMuted: boolean;
 }
 
 export default function Tracking() {
   const navigate = useNavigate();
-  const [isPaused, setIsPaused] = useState(true);
+  const { profile, addActivity } = useAppStore();
+  const { addPost } = useSocialStore();
+
+  // User Weight from profile (fall back to 70kg only if not set)
+  const profileWeightKg = profile?.weight ? parseFloat(profile.weight) : 70;
+
+  // Configuration State (Pre-Start)
+  const [activityType, setActivityType] = useState<ActivityType>('run');
+  const [targetPaceMinutes, setTargetPaceMinutes] = useState<string>(''); // e.g. "5:30"
+  const [isMuted, setIsMuted] = useState(false);
+
+  // Session Engine State
   const [hasStarted, setHasStarted] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [distance, setDistance] = useState(0); // in meters
-  const [speed, setSpeed] = useState(0); // in m/s
-  const [calories, setCalories] = useState(0);
-  const [isStatsExpanded, setIsStatsExpanded] = useState(false);
+  const [startTime, setStartTime] = useState<number>(0);
+  const [pausedAt, setPausedAt] = useState<number | null>(null);
+  const [totalPausedMs, setTotalPausedMs] = useState(0);
+
+  // Display Timers (Updated via animation frame or timestamp calculation)
+  const [movingSeconds, setMovingSeconds] = useState(0);
+  const [pausedSeconds, setPausedSeconds] = useState(0);
+
+  // Telemetry State
+  const [distanceM, setDistanceM] = useState(0);
+  const [, setSpeed] = useState(0); // m/s
+  const [elevationGainM, setElevationGainM] = useState<number | null>(null);
+  const [routePoints, setRoutePoints] = useState<RoutePoint[]>([]);
+  const [splits, setSplits] = useState<KmSplit[]>([]);
+
+  // Modals & UI States
+  const [isStatsExpanded, setIsStatsExpanded] = useState(true);
   const [showEndConfirmation, setShowEndConfirmation] = useState(false);
-  const [showMoodModal, setShowMoodModal] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [pathPositions, setPathPositions] = useState<[number, number][]>([]);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [completedActivity, setCompletedActivity] = useState<Activity | null>(null);
+  const [resumePromptSession, setResumePromptSession] = useState<SavedRunSession | null>(null);
+  const [showManualModal, setShowManualModal] = useState(false);
+  const [isPostedToFeed, setIsPostedToFeed] = useState(false);
 
-  const isStarted = hasStarted;
+  // Target Pace Coach Watcher
+  const targetPaceSec = targetPaceMinutes
+    ? (() => {
+        const parts = targetPaceMinutes.split(':').map(Number);
+        return parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])
+          ? parts[0] * 60 + parts[1]
+          : null;
+      })()
+    : null;
 
-  // Production Timer logic with background safety
-  useEffect(() => {
-    if (hasStarted && !isPaused && !showEndConfirmation) {
-      timerRef.current = setInterval(() => {
-        setElapsedSeconds((prev) => prev + 1);
-      }, 1000);
+  const paceDeviationStartTimeRef = useRef<number | null>(null);
+  const lastPaceAlertTimeRef = useRef<number>(0);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+
+  // Wake Lock Engine
+  const requestWakeLock = async () => {
+    try {
+      if ('wakeLock' in navigator) {
+        wakeLockRef.current = await navigator.wakeLock.request('screen');
+      }
+    } catch {
+      // Browsers may reject wake lock silently
     }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [hasStarted, isPaused, showEndConfirmation]);
+  };
 
-  // Production Calorie estimation based on distance and average exertion
+  const releaseWakeLock = async () => {
+    try {
+      if (wakeLockRef.current) {
+        await wakeLockRef.current.release();
+        wakeLockRef.current = null;
+      }
+    } catch {
+      // Fail silently
+    }
+  };
+
+  // Check for unfinished session (<24 hours old) on mount
   useEffect(() => {
-    // 0.07 kcal per meter is a standard average for running
-    setCalories(Math.round(distance * 0.07));
-  }, [distance]);
+    try {
+      const saved = localStorage.getItem(AUTOSAVE_STORAGE_KEY);
+      if (saved) {
+        const parsed: SavedRunSession = JSON.parse(saved);
+        const age = Date.now() - parsed.savedAt;
 
-  const handleLocationUpdate = useCallback((data: {
-    positions: [number, number][];
-    totalDistance: number;
-    currentSpeed: number;
-  }) => {
-    setDistance(data.totalDistance);
-    setSpeed(data.currentSpeed);
-    if (data.positions && data.positions.length > 0) {
-      setPathPositions(data.positions);
+        // If older than 24 hours, discard silently
+        if (age >= 24 * 60 * 60 * 1000) {
+          localStorage.removeItem(AUTOSAVE_STORAGE_KEY);
+        } else if (parsed.hasStarted) {
+          setResumePromptSession(parsed);
+        }
+      }
+    } catch {
+      localStorage.removeItem(AUTOSAVE_STORAGE_KEY);
     }
   }, []);
 
-  // High Precision Formatting
-  const distanceKm = (distance / 1000).toFixed(2);
-  const paceMinutes = distance > 0 ? (elapsedSeconds / 60) / (distance / 1000) : 0;
-  const paceFormatted = paceMinutes > 0 && paceMinutes < 60
-    ? `${Math.floor(paceMinutes)}:${String(Math.round((paceMinutes % 1) * 60)).padStart(2, '0')}`
-    : '--:--';
-
-  const formatTime = (totalSeconds: number) => {
-    const hrs = Math.floor(totalSeconds / 3600);
-    const mins = Math.floor((totalSeconds % 3600) / 60);
-    const secs = totalSeconds % 60;
-    return hrs > 0 
-      ? `${hrs}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
-      : `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  // Handle Session Resume
+  const handleResumeSession = () => {
+    if (!resumePromptSession) return;
+    setActivityType(resumePromptSession.activityType);
+    setHasStarted(true);
+    setIsPaused(true); // Always resume in paused state so user can ready up
+    setStartTime(resumePromptSession.startTime);
+    setPausedAt(Date.now());
+    setTotalPausedMs(
+      resumePromptSession.totalPausedMs +
+        (resumePromptSession.pausedAt ? Date.now() - resumePromptSession.pausedAt : 0)
+    );
+    setDistanceM(resumePromptSession.distanceM);
+    setElevationGainM(resumePromptSession.elevationGainM);
+    setRoutePoints(resumePromptSession.routePoints);
+    setSplits(resumePromptSession.splits);
+    setIsMuted(resumePromptSession.isMuted);
+    if (resumePromptSession.targetPaceSecPerKm) {
+      setTargetPaceMinutes(formatPace(resumePromptSession.targetPaceSecPerKm / 60));
+    }
+    setResumePromptSession(null);
+    toast.info('Previous run session resumed in paused state.');
   };
 
-  const elevationGain = Math.round(distance * 0.012); // Production placeholder for altitude
-
-  const handleEndRun = () => {
-    // Save to local storage for production persistence
-    const workoutData = {
-      id: Date.now(),
-      type: 'Run',
-      distance: distanceKm,
-      duration: formatTime(elapsedSeconds),
-      calories,
-      pace: paceFormatted,
-      date: new Date().toISOString()
-    };
-    const history = JSON.parse(localStorage.getItem('workout_history') || '[]');
-    localStorage.setItem('workout_history', JSON.stringify([workoutData, ...history]));
-    setShowMoodModal(true);
+  const handleDiscardSavedSession = () => {
+    localStorage.removeItem(AUTOSAVE_STORAGE_KEY);
+    setResumePromptSession(null);
   };
 
-  const handleStartResume = () => {
+  // Timestamp-based Timer Engine: computes moving & paused seconds via actual timestamps
+  useEffect(() => {
     if (!hasStarted) {
-      setHasStarted(true);
+      setMovingSeconds(0);
+      setPausedSeconds(0);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const { movingSeconds: mSec, pausedSeconds: pSec } = calculateSessionTimestamps(
+        startTime,
+        pausedAt,
+        totalPausedMs,
+        Date.now()
+      );
+      setMovingSeconds(mSec);
+      setPausedSeconds(pSec);
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [hasStarted, isPaused, startTime, pausedAt, totalPausedMs]);
+
+  // Keep alive & update timestamps on visibilitychange
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && hasStarted && !isPaused) {
+        requestWakeLock();
+        const { movingSeconds: mSec, pausedSeconds: pSec } = calculateSessionTimestamps(
+          startTime,
+          pausedAt,
+          totalPausedMs,
+          Date.now()
+        );
+        setMovingSeconds(mSec);
+        setPausedSeconds(pSec);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [hasStarted, isPaused, startTime, pausedAt, totalPausedMs]);
+
+  // Autosave Session to localStorage every 5 seconds and on pause
+  useEffect(() => {
+    if (!hasStarted) return;
+
+    const saveSession = () => {
+      const payload: SavedRunSession = {
+        version: 1,
+        savedAt: Date.now(),
+        activityType,
+        hasStarted,
+        isPaused,
+        startTime,
+        pausedAt,
+        totalPausedMs,
+        distanceM,
+        elevationGainM,
+        routePoints,
+        splits,
+        targetPaceSecPerKm: targetPaceSec,
+        isMuted,
+      };
+      try {
+        localStorage.setItem(AUTOSAVE_STORAGE_KEY, JSON.stringify(payload));
+      } catch {
+        // storage overflow guard
+      }
+    };
+
+    // Save immediately on pause
+    if (isPaused) {
+      saveSession();
+    }
+
+    const autosaveTimer = setInterval(saveSession, 5000);
+    return () => clearInterval(autosaveTimer);
+  }, [
+    hasStarted,
+    isPaused,
+    activityType,
+    startTime,
+    pausedAt,
+    totalPausedMs,
+    distanceM,
+    elevationGainM,
+    routePoints,
+    splits,
+    targetPaceSec,
+    isMuted,
+  ]);
+
+  // Start Run Session
+  const handleStartRun = () => {
+    const now = Date.now();
+    setStartTime(now);
+    setPausedAt(null);
+    setTotalPausedMs(0);
+    setHasStarted(true);
+    setIsPaused(false);
+    setDistanceM(0);
+    setSpeed(0);
+    setRoutePoints([]);
+    setSplits([]);
+    setElevationGainM(null);
+    requestWakeLock();
+    playBeep(659.25, 200, isMuted); // E5 start chime
+    triggerHaptic(150, isMuted);
+  };
+
+  // Toggle Pause / Resume
+  const handleTogglePause = () => {
+    const now = Date.now();
+
+    if (!isPaused) {
+      // Pause
+      setIsPaused(true);
+      setPausedAt(now);
+      releaseWakeLock();
+      triggerHaptic(100, isMuted);
+    } else {
+      // Resume
+      const additionalPaused = pausedAt ? now - pausedAt : 0;
+      setTotalPausedMs((prev) => prev + additionalPaused);
+      setPausedAt(null);
       setIsPaused(false);
-    } else {
-      setIsPaused(!isPaused);
+      requestWakeLock();
+      triggerHaptic([100, 50, 100], isMuted);
     }
   };
 
-  const handleShare = () => {
-    setShowShareModal(true);
-  };
+  // Location update from hardened LiveMap (Only called when isTracking === true)
+  const handleLocationUpdate = useCallback(
+    (data: {
+      point: RoutePoint;
+      positions: [number, number][];
+      totalDistanceM: number;
+      smoothedSpeed: number;
+      elevationGainM: number | null;
+    }) => {
+      if (isLocked) return;
 
-  const handleDownloadCard = () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 600;
-    canvas.height = 750;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+      setDistanceM(data.totalDistanceM);
+      setSpeed(data.smoothedSpeed);
+      if (data.elevationGainM !== null) {
+        setElevationGainM(data.elevationGainM);
+      }
 
-    // Fill background
-    ctx.fillStyle = '#09090b'; // dark zinc
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+      setRoutePoints((prev) => {
+        const nextPoints = [...prev, data.point];
 
-    // Add rounded background border/box for inner card
-    ctx.fillStyle = '#111115';
-    ctx.strokeStyle = '#27272a';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.roundRect(40, 40, 520, 550, 40);
-    ctx.fill();
-    ctx.stroke();
+        // Evaluate Kilometer Splits
+        setSplits((currentSplits) => {
+          const { updatedSplits, newKmCompleted } = evaluateSplits(
+            data.totalDistanceM,
+            movingSeconds,
+            currentSplits
+          );
 
-    // Brand Label
-    ctx.font = 'bold 36px sans-serif';
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText('FitGenX Achievements', 80, 110);
+          if (newKmCompleted !== null) {
+            const completedSplit = updatedSplits[updatedSplits.length - 1];
+            announceKilometerSplit(newKmCompleted, completedSplit.seconds, isMuted);
+          }
 
-    ctx.font = 'bold 18px sans-serif';
-    ctx.fillStyle = '#4b5563';
-    ctx.fillText('Session Performance', 80, 140);
+          return updatedSplits;
+        });
 
-    // Draw the Map Route on Canvas
-    ctx.lineWidth = 12;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-
-    // Premium Linear Gradient for the path
-    const grad = ctx.createLinearGradient(120, 150, 480, 420);
-    grad.addColorStop(0, '#AAF0D1');
-    grad.addColorStop(1, '#007AFF');
-    ctx.strokeStyle = grad;
-
-    ctx.beginPath();
-    const rawPath = pathPositions.length >= 2 ? pathPositions : [
-      [37.7749, -122.4194],
-      [37.7752, -122.4189],
-      [37.7758, -122.4198],
-      [37.7761, -122.4172],
-      [37.7741, -122.4168]
-    ];
-
-    const lats = rawPath.map(p => p[0]);
-    const lngs = rawPath.map(p => p[1]);
-    const minLat = Math.min(...lats);
-    const maxLat = Math.max(...lats);
-    const minLng = Math.min(...lngs);
-    const maxLng = Math.max(...lngs);
-
-    const latRange = maxLat - minLat || 1;
-    const lngRange = maxLng - minLng || 1;
-
-    rawPath.forEach((p, i) => {
-      const x = ((p[1] - minLng) / lngRange) * 400 + 100;
-      const y = 480 - (((p[0] - minLat) / latRange) * 260 + 100);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-
-    // Stats Section at bottom of inner card
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 52px sans-serif';
-    ctx.fillText(distanceKm, 80, 520);
-    ctx.font = 'bold 18px sans-serif';
-    ctx.fillStyle = '#6b7280';
-    ctx.fillText('DISTANCE (KM)', 80, 560);
-
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 52px sans-serif';
-    ctx.fillText(paceFormatted, 260, 520);
-    ctx.font = 'bold 18px sans-serif';
-    ctx.fillStyle = '#6b7280';
-    ctx.fillText('PACE (/KM)', 260, 560);
-
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 52px sans-serif';
-    ctx.fillText(formatTime(elapsedSeconds), 430, 520);
-    ctx.font = 'bold 18px sans-serif';
-    ctx.fillStyle = '#6b7280';
-    ctx.fillText('TIME', 430, 560);
-
-    // Call To Action Footer Banner
-    ctx.font = 'bold 24px sans-serif';
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText('Generated with FitGenX Vitality AI', 40, 680);
-
-    // Export & Download canvas as image
-    const dataURL = canvas.toDataURL('image/png');
-    const link = document.createElement('a');
-    link.href = dataURL;
-    link.download = `fitgenx-session-${Date.now()}.png`;
-    link.click();
-    toast.success("Workout map and stats image downloaded successfully!", "Shared successfully");
-    setShowShareModal(false);
-  };
-
-  const handleExecuteShare = () => {
-    const shareText = `Checkout my run on FitGenX! 🏃‍♂️💨\nDistance: ${distanceKm} km\nDuration: ${formatTime(elapsedSeconds)}\nPace: ${paceFormatted} /km\nBurned: ${calories} kcal`;
-
-    if (navigator.share) {
-      navigator.share({
-        title: 'FitGenX Performance',
-        text: shareText,
-        url: window.location.href,
-      }).catch(() => {
-        navigator.clipboard.writeText(shareText);
-        toast.success("Workout map & stats summary copied to clipboard!", "Shared successfully");
+        return nextPoints;
       });
-    } else {
-      navigator.clipboard.writeText(shareText);
-      toast.success("Workout map & stats summary copied to clipboard!", "Shared successfully");
+    },
+    [isLocked, movingSeconds, isMuted]
+  );
+
+  // Pace Metrics Calculations
+  const distanceKm = (distanceM / 1000).toFixed(2);
+  const avgPaceMinutes = distanceM > 0 ? (movingSeconds / 60) / (distanceM / 1000) : null;
+  const avgPaceFormatted = formatPace(avgPaceMinutes);
+  const rollingPaceMinutes = calculateRollingPace(routePoints, 30000);
+  const rollingPaceFormatted = formatPace(rollingPaceMinutes);
+
+  // Honest Calorie MET calculation
+  const { calories, isEstimate: isCalorieEstimate } = calculateHonestCalories(
+    activityType,
+    movingSeconds,
+    profileWeightKg,
+    rollingPaceMinutes || avgPaceMinutes
+  );
+
+  // Target Pace Coach: check if off target by >15s/km for 30 consecutive seconds
+  useEffect(() => {
+    if (!hasStarted || isPaused || !targetPaceSec || !rollingPaceMinutes) {
+      paceDeviationStartTimeRef.current = null;
+      return;
     }
-    setShowShareModal(false);
+
+    const currentRollingSec = rollingPaceMinutes * 60;
+    const diffSec = currentRollingSec - targetPaceSec;
+
+    if (Math.abs(diffSec) > 15) {
+      if (!paceDeviationStartTimeRef.current) {
+        paceDeviationStartTimeRef.current = Date.now();
+      } else if (
+        Date.now() - paceDeviationStartTimeRef.current >= 30000 &&
+        Date.now() - lastPaceAlertTimeRef.current >= 45000
+      ) {
+        // Trigger Coach Advice
+        lastPaceAlertTimeRef.current = Date.now();
+        const isSlower = diffSec > 15;
+        const msg = isSlower
+          ? `Pace Alert: You are running slower than your target ${targetPaceMinutes}/km.`
+          : `Pace Alert: You are running faster than your target ${targetPaceMinutes}/km.`;
+
+        toast.info(msg);
+        playBeep(440, 200, isMuted);
+        speakAnnouncement(isSlower ? 'Pick up your pace' : 'Ease up your pace', isMuted);
+      }
+    } else {
+      paceDeviationStartTimeRef.current = null;
+    }
+  }, [hasStarted, isPaused, targetPaceSec, rollingPaceMinutes, targetPaceMinutes, isMuted]);
+
+  // Finish & End Run
+  const handleEndRun = () => {
+    releaseWakeLock();
+    const finalDownsampledRoute = downsampleRoute(routePoints, 5, 2000);
+    const xpEarned = calculateActivityXP(activityType, distanceM);
+    const avgPaceSec = computeAvgPaceSecPerKm(movingSeconds, distanceM);
+
+    const activity: Activity = {
+      id: `activity-${Date.now()}`,
+      type: activityType,
+      startedAt: new Date(startTime).toISOString(),
+      endedAt: new Date().toISOString(),
+      date: new Date(startTime).toISOString(),
+      duration: movingSeconds,
+      movingSeconds,
+      pausedSeconds,
+      distanceM,
+      calories,
+      caloriesBurned: calories,
+      avgPaceSecPerKm: avgPaceSec,
+      splits,
+      route: finalDownsampledRoute,
+      elevationGainM,
+      mood: null,
+      xpEarned,
+    };
+
+    // Save ONE activity through the unified store
+    addActivity(activity);
+
+    // Clear autosave session
+    localStorage.removeItem(AUTOSAVE_STORAGE_KEY);
+
+    // Present Summary View
+    setCompletedActivity(activity);
+    setShowEndConfirmation(false);
+  };
+
+  // Post to Social Community Feed
+  const handlePostToFeed = () => {
+    if (!completedActivity || isPostedToFeed) return;
+
+    addPost({
+      authorId: 'me',
+      authorName: profile?.name || 'FitGenX Athlete',
+      authorRole: `${activityType.toUpperCase()} ATHLETE`,
+      authorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop',
+      content: `Completed a ${distanceKm} km ${activityType}! Moving time: ${formatTime(movingSeconds)}, Average pace: ${avgPaceFormatted}/km. Earned +${completedActivity.xpEarned} XP!`,
+      time: 'Just now',
+      metrics: [
+        { label: 'Distance', value: `${distanceKm}`, unit: 'km' },
+        { label: 'Moving Time', value: formatTime(movingSeconds), unit: '' },
+        { label: 'Avg Pace', value: avgPaceFormatted, unit: '/km' },
+        { label: 'Calories', value: `${calories}`, unit: 'kcal' },
+      ],
+    });
+
+    setIsPostedToFeed(true);
+    toast.success('Activity posted to your social community feed!');
+  };
+
+  // Clipboard Share
+  const handleCopyShareCard = () => {
+    const text = `FitGenX ${activityType.toUpperCase()}: ${distanceKm} km | ${formatTime(movingSeconds)} | ${avgPaceFormatted}/km pace | ${calories} kcal burned!`;
+    navigator.clipboard.writeText(text);
+    toast.success('Performance copied to clipboard!');
+  };
+
+  const bestSplit = getBestSplit(splits);
+
+  return (
+    <div className="relative min-h-screen bg-zinc-950 overflow-hidden font-sans text-white select-none">
+      {/* ─── Unfinished Session Recovery Modal ─── */}
+      {resumePromptSession && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+              <span className="material-symbols-outlined text-2xl">history</span>
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-white font-headline">Unfinished Session Found</h3>
+              <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+                You have an uncompleted {resumePromptSession.activityType} from{' '}
+                {new Date(resumePromptSession.savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} with{' '}
+                {(resumePromptSession.distanceM / 1000).toFixed(2)} km recorded.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={handleDiscardSavedSession}
+                className="flex-1 py-2.5 rounded-xl border border-zinc-700 text-xs font-bold text-zinc-400 hover:bg-zinc-800 transition-colors"
+              >
+                Discard
+              </button>
+              <button
+                type="button"
+                onClick={handleResumeSession}
+                className="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-zinc-950 text-xs font-bold transition-all shadow-md shadow-emerald-500/20"
+              >
+                Resume Run
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Manual Activity Entry Fallback Modal ─── */}
+      {showManualModal && (
+        <ManualEntryModal
+          activityType={activityType}
+          onClose={() => setShowManualModal(false)}
+          onSave={(manualActivity) => {
+            addActivity(manualActivity);
+            setShowManualModal(false);
+            setCompletedActivity(manualActivity);
+          }}
+        />
+      )}
+
+      {/* ─── Interactive Live Map Layer ─── */}
+      {/* Highest priority requirement: isTracking = hasStarted && !isPaused */}
+      <LiveMap
+        activityType={activityType}
+        hasStarted={hasStarted}
+        isTracking={hasStarted && !isPaused}
+        onLocationUpdate={handleLocationUpdate}
+        onAutoPauseChange={(shouldPause) => {
+          if (shouldPause && !isPaused) {
+            handleTogglePause();
+            toast.info('Run auto-paused: GPS signal lost for over 30s.');
+          } else if (!shouldPause && isPaused) {
+            handleTogglePause();
+            toast.success('GPS signal restored: Run auto-resumed.');
+          }
+        }}
+        onRequestManualEntry={() => setShowManualModal(true)}
+      />
+
+      {/* Vignette Gradients */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-transparent to-black/85 pointer-events-none z-10" />
+
+      {/* ─── Top Telemetry Header ─── */}
+      <header className="absolute top-8 left-0 w-full px-6 flex justify-between items-center z-40">
+        <div className="flex items-center gap-2">
+          {/* Active Timer Pill */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-zinc-900/90 backdrop-blur-xl px-4 py-2 rounded-full border border-white/10 flex items-center gap-2.5 shadow-2xl"
+          >
+            <div
+              className={`w-2 h-2 rounded-full ${
+                !hasStarted ? 'bg-zinc-500' : isPaused ? 'bg-amber-400' : 'bg-emerald-400 animate-pulse'
+              }`}
+            />
+            <span className="text-base font-black font-headline tabular-nums tracking-tighter">
+              {formatTime(movingSeconds)}
+            </span>
+          </motion.div>
+
+          {/* Mute Toggle Button */}
+          <button
+            type="button"
+            onClick={() => setIsMuted(!isMuted)}
+            className="w-9 h-9 rounded-full bg-zinc-900/90 backdrop-blur-xl border border-white/10 flex items-center justify-center text-zinc-300 hover:text-white transition-colors"
+          >
+            <span className="material-symbols-outlined text-base">
+              {isMuted ? 'volume_off' : 'volume_up'}
+            </span>
+          </button>
+        </div>
+
+        {/* Lock Screen Toggle (Prevent Accidental Touches) */}
+        {hasStarted && (
+          <button
+            type="button"
+            onClick={() => {
+              setIsLocked(!isLocked);
+              triggerHaptic(60, isMuted);
+              toast.info(isLocked ? 'Screen unlocked' : 'Screen locked (touches disabled)');
+            }}
+            className={`w-9 h-9 rounded-full backdrop-blur-xl flex items-center justify-center border transition-all ${
+              isLocked
+                ? 'bg-amber-500 text-zinc-950 border-amber-400 shadow-lg shadow-amber-500/20'
+                : 'bg-zinc-900/90 text-zinc-300 border-white/10'
+            }`}
+          >
+            <span className="material-symbols-outlined text-base">
+              {isLocked ? 'lock' : 'lock_open'}
+            </span>
+          </button>
+        )}
+      </header>
+
+      {/* ─── Pre-Start Configuration Drawer ─── */}
+      {!hasStarted && (
+        <div className="absolute top-24 inset-x-6 z-30 max-w-sm mx-auto space-y-3">
+          {/* Activity Type Selector */}
+          <div className="bg-zinc-900/90 backdrop-blur-xl p-3.5 rounded-3xl border border-white/10 shadow-2xl space-y-3">
+            <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-400 block px-1">
+              Select Activity
+            </span>
+            <div className="grid grid-cols-3 gap-2">
+              {(['run', 'walk', 'cycle'] as ActivityType[]).map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setActivityType(type)}
+                  className={`py-2 px-3 rounded-2xl flex flex-col items-center gap-1 text-xs font-bold capitalize transition-all ${
+                    activityType === type
+                      ? 'bg-emerald-500 text-zinc-950 shadow-md shadow-emerald-500/20'
+                      : 'bg-zinc-800/80 text-zinc-300 hover:bg-zinc-800'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-lg">
+                    {type === 'run' ? 'directions_run' : type === 'walk' ? 'hiking' : 'directions_bike'}
+                  </span>
+                  <span>{type}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Optional Target Pace Input */}
+            <div className="pt-2 border-t border-white/5 flex items-center justify-between px-1">
+              <label className="text-[10px] uppercase font-bold tracking-widest text-zinc-400">
+                Target Pace
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. 5:30"
+                value={targetPaceMinutes}
+                onChange={(e) => setTargetPaceMinutes(e.target.value)}
+                className="w-20 px-2 py-1 rounded-xl bg-zinc-800 border border-white/10 text-xs font-mono text-center text-emerald-400 placeholder-zinc-500 focus:outline-none focus:border-emerald-400"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Bottom HUD & Primary Metric Panel ─── */}
+      <div className="absolute bottom-12 inset-x-0 px-6 z-40 max-w-md mx-auto space-y-4">
+        {/* Metric Cards Panel */}
+        <motion.div
+          animate={{ height: isStatsExpanded ? 'auto' : '64px' }}
+          className="bg-zinc-900/95 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.8)] overflow-hidden"
+        >
+          {/* Header of Drawer */}
+          <div
+            onClick={() => setIsStatsExpanded(!isStatsExpanded)}
+            className="flex justify-between items-center cursor-pointer mb-2"
+          >
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">
+                {activityType} Telemetry
+              </span>
+            </div>
+            <span className="material-symbols-outlined text-zinc-400 text-lg">
+              {isStatsExpanded ? 'expand_more' : 'expand_less'}
+            </span>
+          </div>
+
+          {/* Primary Hero Distance */}
+          <div className="flex items-baseline gap-2 pt-1 pb-3">
+            <span className="text-5xl font-black font-headline tracking-tighter text-white tabular-nums">
+              {distanceKm}
+            </span>
+            <span className="text-xs font-black uppercase tracking-widest text-emerald-400 font-label">
+              Kilometers
+            </span>
+          </div>
+
+          {/* Metric Sub-Grid */}
+          {isStatsExpanded && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="grid grid-cols-4 gap-2 pt-4 border-t border-white/10"
+            >
+              {/* Rolling 30s Pace */}
+              <div>
+                <p className="text-[9px] uppercase tracking-wider text-zinc-400 font-bold mb-0.5">Current</p>
+                <p className="text-sm font-black font-headline tabular-nums text-emerald-400">
+                  {rollingPaceFormatted}
+                </p>
+              </div>
+
+              {/* Avg Pace */}
+              <div>
+                <p className="text-[9px] uppercase tracking-wider text-zinc-400 font-bold mb-0.5">Avg Pace</p>
+                <p className="text-sm font-black font-headline tabular-nums text-white">
+                  {avgPaceFormatted}
+                </p>
+              </div>
+
+              {/* Honest Calories */}
+              <div>
+                <p className="text-[9px] uppercase tracking-wider text-zinc-400 font-bold mb-0.5">
+                  Calories {isCalorieEstimate && <span className="text-[8px] text-zinc-500">(est.)</span>}
+                </p>
+                <p className="text-sm font-black font-headline tabular-nums text-white">
+                  {calories}
+                </p>
+              </div>
+
+              {/* Honest Altitude Gain */}
+              <div>
+                <p className="text-[9px] uppercase tracking-wider text-zinc-400 font-bold mb-0.5">Elev Gain</p>
+                <p className="text-sm font-black font-headline tabular-nums text-white">
+                  {elevationGainM !== null ? `${elevationGainM}m` : '—'}
+                </p>
+              </div>
+            </motion.div>
+          )}
+        </motion.div>
+
+        {/* ─── Primary Controls ─── */}
+        {!hasStarted ? (
+          <button
+            type="button"
+            onClick={handleStartRun}
+            className="w-full py-4 rounded-3xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-base font-black uppercase tracking-wider transition-all active:scale-95 shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2"
+          >
+            <span className="material-symbols-outlined text-2xl font-bold">play_arrow</span>
+            Start {activityType}
+          </button>
+        ) : (
+          <div className="flex items-center gap-3">
+            {/* Pause / Resume Button */}
+            <button
+              type="button"
+              disabled={isLocked}
+              onClick={handleTogglePause}
+              className={`flex-1 py-4 rounded-3xl text-sm font-black uppercase tracking-wider transition-all active:scale-95 shadow-xl flex items-center justify-center gap-2 ${
+                isPaused
+                  ? 'bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-emerald-500/20'
+                  : 'bg-zinc-800 hover:bg-zinc-700 text-white border border-white/10'
+              }`}
+            >
+              <span className="material-symbols-outlined text-xl">
+                {isPaused ? 'play_arrow' : 'pause'}
+              </span>
+              {isPaused ? 'Resume' : 'Pause'}
+            </button>
+
+            {/* End Run Button */}
+            <button
+              type="button"
+              disabled={isLocked}
+              onClick={() => setShowEndConfirmation(true)}
+              className="px-6 py-4 rounded-3xl bg-rose-600/90 hover:bg-rose-600 text-white text-sm font-black uppercase tracking-wider transition-all active:scale-95 shadow-xl shadow-rose-600/20 flex items-center justify-center gap-1.5"
+            >
+              <span className="material-symbols-outlined text-xl">stop</span>
+              Finish
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* ─── End Run Confirmation Modal ─── */}
+      {showEndConfirmation && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
+            <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center">
+              <span className="material-symbols-outlined text-2xl">flag</span>
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-white font-headline">End {activityType}?</h3>
+              <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+                Your workout will be saved to your cloud profile, creature XP will be awarded, and your route will be preserved.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowEndConfirmation(false)}
+                className="flex-1 py-2.5 rounded-xl border border-zinc-700 text-xs font-bold text-zinc-300 hover:bg-zinc-800 transition-colors"
+              >
+                Continue {activityType}
+              </button>
+              <button
+                type="button"
+                onClick={handleEndRun}
+                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shadow-md shadow-rose-600/20"
+              >
+                Save & Finish
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Completed Activity Summary Screen with Replay Map & Social Share ─── */}
+      {completedActivity && (
+        <CompletedRunModal
+          activity={completedActivity}
+          bestSplit={bestSplit}
+          isPostedToFeed={isPostedToFeed}
+          onPostToFeed={handlePostToFeed}
+          onCopyShare={handleCopyShareCard}
+          onClose={() => navigate('/analytics')}
+        />
+      )}
+
+      <BottomNav />
+    </div>
+  );
+}
+
+/**
+ * Modal to enter an activity manually when GPS permission is denied or device has no GPS.
+ */
+function ManualEntryModal({
+  activityType,
+  onClose,
+  onSave,
+}: {
+  activityType: ActivityType;
+  onClose: () => void;
+  onSave: (activity: Activity) => void;
+}) {
+  const [distKm, setDistKm] = useState('5.0');
+  const [minutes, setMinutes] = useState('28');
+  const [seconds, setSeconds] = useState('0');
+  const [selectedType, setSelectedType] = useState<ActivityType>(activityType);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const kmNum = parseFloat(distKm) || 0;
+    const totalSec = (parseInt(minutes, 10) || 0) * 60 + (parseInt(seconds, 10) || 0);
+    const distM = kmNum * 1000;
+    const { calories } = calculateHonestCalories(selectedType, totalSec, 70, kmNum > 0 ? (totalSec / 60) / kmNum : null);
+    const xpEarned = calculateActivityXP(selectedType, distM);
+    const avgPaceSec = computeAvgPaceSecPerKm(totalSec, distM);
+
+    const manualActivity: Activity = {
+      id: `manual-${Date.now()}`,
+      type: selectedType,
+      startedAt: new Date(Date.now() - totalSec * 1000).toISOString(),
+      endedAt: new Date().toISOString(),
+      date: new Date().toISOString(),
+      duration: totalSec,
+      movingSeconds: totalSec,
+      pausedSeconds: 0,
+      distanceM: distM,
+      calories,
+      caloriesBurned: calories,
+      avgPaceSecPerKm: avgPaceSec,
+      splits: [],
+      route: [],
+      elevationGainM: null,
+      mood: null,
+      xpEarned,
+    };
+
+    onSave(manualActivity);
   };
 
   return (
-    <div className="relative min-h-screen bg-black overflow-hidden font-sans text-white">
-      {/* Interactive Map Layer */}
-      <LiveMap onLocationUpdate={handleLocationUpdate} isTracking={true} />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/20 pointer-events-none" />
-      
-      {/* Top Header - Production Level Minimalist */}
-      <header className="absolute top-10 left-0 w-full px-6 flex justify-between items-center z-50">
-        <motion.div 
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-zinc-900/80 backdrop-blur-xl px-4 py-1.5 rounded-full border border-white/10 flex items-center gap-2.5 shadow-2xl"
-        >
-          <div className={`w-2 h-2 rounded-full ${isPaused ? 'bg-zinc-500' : 'bg-red-500 animate-pulse'}`} />
-          <span className="text-lg font-black font-headline tabular-nums tracking-tighter">
-            {formatTime(elapsedSeconds)}
-          </span>
-        </motion.div>
+    <div className="fixed inset-0 z-[160] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
+        <div className="flex justify-between items-center">
+          <h3 className="text-base font-bold text-white font-headline">Manual Activity Entry</h3>
+          <button type="button" onClick={onClose} className="text-zinc-400 hover:text-white">
+            <span className="material-symbols-outlined text-lg">close</span>
+          </button>
+        </div>
 
-        <button 
-          onClick={() => setIsLocked(!isLocked)}
-          className={`w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-xl border transition-all ${isLocked ? 'bg-primary border-primary text-white' : 'bg-zinc-900/80 border-white/10 text-white/60'}`}
-        >
-          <span className="material-symbols-outlined text-[20px]">{isLocked ? 'lock' : 'lock_open'}</span>
-        </button>
-      </header>
-
-      {/* Main Metric Display with started animation */}
-      <motion.div
-        animate={{ 
-          top: isStarted ? '105px' : '22%',
-          left: isStarted ? '24px' : '50%',
-          translateX: isStarted ? '0%' : '-50%',
-          textAlign: isStarted ? 'left' : 'center',
-          scale: isStarted ? 0.45 : 1,
-          opacity: isLocked ? 0.4 : 1
-        }}
-        transition={{ type: 'spring', damping: 22, stiffness: 120 }}
-        className="absolute flex flex-col pointer-events-none z-20 origin-left select-none"
-      >
-        <span className="text-[84px] font-black font-headline tracking-tighter leading-none">
-          {distanceKm}
-        </span>
-        <span className={`text-xs font-black uppercase tracking-[0.4em] text-white/30 -mt-1 transition-all ${isStarted ? 'opacity-0 hidden' : 'opacity-100 block'}`}>
-          Kilometers
-        </span>
-      </motion.div>
-
-      {/* Lock Overlay */}
-      <AnimatePresence>
-        {isLocked && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 z-40 bg-black/20 backdrop-blur-[2px] flex flex-col items-center justify-center"
-          >
-            <div className="bg-zinc-900/90 p-6 rounded-3xl border border-white/10 flex flex-col items-center gap-4 shadow-2xl">
-              <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-                <span className="material-symbols-outlined text-primary text-2xl">lock</span>
-              </div>
-              <p className="text-sm font-bold uppercase tracking-widest text-white/80">Screen Locked</p>
-              <button 
-                onClick={() => setIsLocked(false)}
-                className="bg-white text-black px-6 py-2 rounded-xl font-black uppercase text-[10px] tracking-widest"
-              >
-                Tap to Unlock
-              </button>
+        <form onSubmit={handleSubmit} className="space-y-3.5">
+          <div>
+            <label className="text-[10px] uppercase font-bold text-zinc-400 block mb-1">Activity Type</label>
+            <div className="grid grid-cols-3 gap-2">
+              {(['run', 'walk', 'cycle'] as ActivityType[]).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setSelectedType(t)}
+                  className={`py-1.5 rounded-xl text-xs font-bold capitalize ${
+                    selectedType === t ? 'bg-emerald-500 text-zinc-950' : 'bg-zinc-800 text-zinc-300'
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* End Confirmation Overlay */}
-      <AnimatePresence>
-        {showEndConfirmation && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 z-[60] bg-black/80 backdrop-blur-md flex items-center justify-center p-6"
-          >
-            <div className="bg-zinc-900 w-full max-w-xs rounded-[2.5rem] p-8 border border-white/10 text-center flex flex-col gap-6">
-              <div>
-                <h3 className="text-2xl font-black font-headline tracking-tight mb-2">End Session?</h3>
-                <p className="text-zinc-500 text-xs font-medium">Ready to save your progress and see your achievements?</p>
-              </div>
-              <div className="flex flex-col gap-3">
-                <button 
-                  onClick={handleEndRun}
-                  className="bg-white text-black py-4 rounded-2xl font-black uppercase tracking-widest text-xs"
-                >
-                  Save and End
-                </button>
-                <button 
-                  onClick={() => setShowEndConfirmation(false)}
-                  className="bg-white/10 py-4 rounded-2xl font-black uppercase tracking-widest text-xs text-white/60"
-                >
-                  Resume Run
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* FitGenX Style Shareable Summary Map Modal */}
-      <AnimatePresence>
-        {showShareModal && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 z-[70] bg-black/75 backdrop-blur-xl flex items-center justify-center p-6"
-          >
-            <motion.div 
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              className="bg-zinc-900/95 border border-white/10 rounded-[2.5rem] w-full max-w-sm overflow-hidden flex flex-col p-6 gap-6 relative shadow-[0_30px_90px_rgba(0,0,0,0.8)]"
-            >
-              {/* Top Banner and Close button */}
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <Award className="text-primary" size={16} />
-                  <span className="text-[10px] font-black tracking-[0.3em] uppercase text-white/50">FitGenX Achievements</span>
-                </div>
-                <button onClick={() => setShowShareModal(false)} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 active:scale-95 transition-all text-white/60">
-                  <X size={16} />
-                </button>
-              </div>
-
-              {/* FitGenX Brand Specific Custom Map Representation Card */}
-              <div className="bg-zinc-950 p-5 rounded-[2rem] border border-white/5 relative overflow-hidden flex flex-col justify-between h-72 shadow-inner">
-                {/* Brand Name */}
-                <div className="flex justify-between items-start z-10">
-                  <div>
-                    <span className="text-xs font-black tracking-widest uppercase text-white">FitGenX</span>
-                    <p className="text-[9px] font-black uppercase tracking-widest text-white/30">Session Performance</p>
-                  </div>
-                  <Download size={16} className="text-white/20" />
-                </div>
-
-                {/* Styled Leaflet Map matching the App's Map Style exactly */}
-                <div className="absolute inset-0 z-0 pointer-events-none p-2 rounded-[2rem] overflow-hidden">
-                  <MapContainer
-                    center={pathPositions.length > 0 ? pathPositions[pathPositions.length - 1] : [20.5937, 78.9629]}
-                    zoom={15}
-                    zoomControl={false}
-                    className="w-full h-full pointer-events-none select-none opacity-100"
-                    style={{ background: '#09090b', height: '100%' }}
-                  >
-                    <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
-                    {pathPositions.length > 1 && (
-                      <Polyline
-                        positions={pathPositions}
-                        pathOptions={{
-                          color: '#00D1FF',
-                          weight: 5,
-                          lineCap: 'round',
-                          lineJoin: 'round',
-                        }}
-                      />
-                    )}
-                    <ModalMapController center={pathPositions.length > 0 ? pathPositions[pathPositions.length - 1] : [20.5937, 78.9629]} />
-                  </MapContainer>
-                </div>
-
-                {/* Card Key Performance Metrics */}
-                <div className="grid grid-cols-3 gap-2 border-t border-white/5 pt-4 z-10 bg-zinc-950/80 backdrop-blur-md rounded-b-[1.8rem] -mx-5 px-5 -mb-5 pb-5">
-                  <div className="text-center">
-                    <p className="text-[8px] font-black uppercase tracking-widest text-white/40 mb-1">Distance</p>
-                    <p className="font-display text-lg font-black text-white leading-none">{distanceKm}<span className="text-[10px] ml-0.5 opacity-40 uppercase">km</span></p>
-                  </div>
-                  <div className="text-center border-x border-white/5">
-                    <p className="text-[8px] font-black uppercase tracking-widest text-white/40 mb-1">Pace</p>
-                    <p className="font-display text-lg font-black text-white leading-none">{paceFormatted}<span className="text-[10px] ml-0.5 opacity-40 uppercase">/km</span></p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-[8px] font-black uppercase tracking-widest text-white/40 mb-1">Time</p>
-                    <p className="font-display text-lg font-black text-white leading-none">{formatTime(elapsedSeconds)}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Bottom Action Buttons */}
-              <div className="flex flex-col gap-2.5">
-                <button 
-                  onClick={handleExecuteShare}
-                  className="w-full py-4 rounded-2xl bg-white text-zinc-900 font-display font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 shadow-2xl transition-all active:scale-[0.98] hover:bg-zinc-100"
-                >
-                  <Share2 size={16} />
-                  <span>Share Summary</span>
-                </button>
-
-                <button 
-                  onClick={handleDownloadCard}
-                  className="w-full py-3.5 rounded-2xl bg-zinc-800 text-white font-display font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 transition-all active:scale-[0.98] hover:bg-zinc-700 border border-white/5"
-                >
-                  <Image size={16} />
-                  <span>Save Map & Stats to PNG</span>
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Stats Bento & Controls Drawer - Drag-to-Slide Interface */}
-      <div className="absolute bottom-0 left-0 w-full z-30">
-        <motion.div
-          drag="y"
-          dragConstraints={{ top: 0, bottom: 320 }}
-          dragElastic={0.1}
-          onDragEnd={(_, info) => {
-            if (info.offset.y > 100) setIsStatsExpanded(false);
-            if (info.offset.y < -100) setIsStatsExpanded(true);
-          }}
-          initial={false}
-          animate={{ y: isStatsExpanded ? 0 : 320 }}
-          transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-          className="bg-zinc-900/98 backdrop-blur-3xl rounded-t-[3.5rem] border-t border-white/10 p-8 pt-12 shadow-[0_-20px_80px_rgba(0,0,0,0.9)] pb-24 cursor-grab active:cursor-grabbing"
-        >
-          {/* Drawer Handle */}
-          <div className="absolute top-5 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-white/10 rounded-full" />
-
-          {/* Action Controls - Moved Higher for Reachability & Visibility */}
-          <div className="flex justify-center items-center gap-8 mb-12">
-            <button 
-              onClick={() => setShowEndConfirmation(true)}
-              className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-red-500 transition-colors active:scale-90"
-            >
-              <span className="material-symbols-outlined text-xl">stop_circle</span>
-            </button>
-
-            <button 
-              onClick={handleStartResume}
-              className="w-20 h-20 rounded-full bg-white flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
-            >
-              <span className="material-symbols-outlined text-black text-4xl font-bold">
-                {isPaused ? 'play_arrow' : 'pause'}
-              </span>
-            </button>
-
-            <button 
-              onClick={handleShare}
-              className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 active:scale-90"
-            >
-              <span className="material-symbols-outlined text-xl">share</span>
-            </button>
           </div>
 
-          {/* Optimized Bento Grid */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white/5 p-5 rounded-[1.8rem] border border-white/5">
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="material-symbols-outlined text-xs text-primary">speed</span>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-white/30">Pace</p>
-              </div>
-              <p className="text-3xl font-black font-headline tabular-nums leading-none">{paceFormatted}</p>
+          <div>
+            <label className="text-[10px] uppercase font-bold text-zinc-400 block mb-1">Distance (km)</label>
+            <input
+              type="number"
+              step="0.01"
+              required
+              value={distKm}
+              onChange={(e) => setDistKm(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl bg-zinc-800 border border-zinc-700 text-sm text-white focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-[10px] uppercase font-bold text-zinc-400 block mb-1">Minutes</label>
+              <input
+                type="number"
+                min="0"
+                required
+                value={minutes}
+                onChange={(e) => setMinutes(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl bg-zinc-800 border border-zinc-700 text-sm text-white focus:outline-none focus:border-emerald-500"
+              />
             </div>
-            <div className="bg-white/5 p-5 rounded-[1.8rem] border border-white/5">
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="material-symbols-outlined text-xs text-orange-500">local_fire_department</span>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-white/30">Calories</p>
-              </div>
-              <p className="text-3xl font-black font-headline tabular-nums leading-none">{calories}</p>
-            </div>
-            <div className="col-span-2 bg-white/5 p-5 rounded-[1.8rem] border border-white/5 flex justify-between items-center">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1.5">Elevation</p>
-                <p className="text-2xl font-black font-headline tabular-nums">{elevationGain}<span className="text-xs text-white/20 ml-1 uppercase">m</span></p>
-              </div>
-              <div className="h-10 w-px bg-white/10 mx-6" />
-              <div className="flex-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1.5">Current Speed</p>
-                <p className="text-2xl font-black font-headline tabular-nums text-primary">{(speed * 3.6).toFixed(1)}<span className="text-xs text-white/20 ml-1 uppercase">km/h</span></p>
-              </div>
+            <div>
+              <label className="text-[10px] uppercase font-bold text-zinc-400 block mb-1">Seconds</label>
+              <input
+                type="number"
+                min="0"
+                max="59"
+                value={seconds}
+                onChange={(e) => setSeconds(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl bg-zinc-800 border border-zinc-700 text-sm text-white focus:outline-none focus:border-emerald-500"
+              />
             </div>
           </div>
-        </motion.div>
+
+          <button
+            type="submit"
+            className="w-full py-3 mt-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-xs font-bold uppercase tracking-wider transition-colors"
+          >
+            Save to Logbook
+          </button>
+        </form>
       </div>
+    </div>
+  );
+}
 
-      <AnimatePresence>
-        {showMoodModal && (
-          <MoodModal 
-            onComplete={() => {
-              setShowMoodModal(false);
-              navigate('/analytics');
-            }} 
-            onDismiss={() => {
-              setShowMoodModal(false);
-              navigate('/analytics');
-            }} 
-          />
+/**
+ * End-of-run detail replay view with read-only route map, splits table, XP badge, and social share.
+ */
+function CompletedRunModal({
+  activity,
+  bestSplit,
+  isPostedToFeed,
+  onPostToFeed,
+  onCopyShare,
+  onClose,
+}: {
+  activity: Activity;
+  bestSplit: KmSplit | null;
+  isPostedToFeed: boolean;
+  onPostToFeed: () => void;
+  onCopyShare: () => void;
+  onClose: () => void;
+}) {
+  const distKm = (activity.distanceM / 1000).toFixed(2);
+  const avgPace = formatPace(activity.avgPaceSecPerKm ? activity.avgPaceSecPerKm / 60 : null);
+  const mapPositions = activity.route.map((p) => [p.lat, p.lng] as [number, number]);
+
+  return (
+    <div className="fixed inset-0 z-[200] overflow-y-auto bg-zinc-950 p-4 pb-20 animate-fade-in flex flex-col items-center">
+      <div className="w-full max-w-md space-y-6 pt-4">
+        {/* Header Badge */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-emerald-400" />
+            <h2 className="text-xl font-black font-headline tracking-tight text-white capitalize">
+              {activity.type} Complete!
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-9 h-9 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white"
+          >
+            <span className="material-symbols-outlined text-lg">close</span>
+          </button>
+        </div>
+
+        {/* Creature XP Award Card */}
+        <div className="p-4 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500 text-zinc-950 flex items-center justify-center font-black">
+              ⚡
+            </div>
+            <div>
+              <p className="text-xs font-black text-emerald-400 font-headline uppercase tracking-wider">
+                Creature Companion Leveled
+              </p>
+              <p className="text-[11px] text-zinc-400">Awarded for consistent volume & endurance</p>
+            </div>
+          </div>
+          <span className="text-lg font-black font-headline text-emerald-400">+{activity.xpEarned} XP</span>
+        </div>
+
+        {/* Metrics Grid */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="p-4 rounded-3xl bg-zinc-900 border border-zinc-800">
+            <p className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">Distance</p>
+            <p className="text-2xl font-black font-headline text-white mt-1">{distKm} <span className="text-xs text-emerald-400">km</span></p>
+          </div>
+          <div className="p-4 rounded-3xl bg-zinc-900 border border-zinc-800">
+            <p className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">Moving Time</p>
+            <p className="text-2xl font-black font-headline text-white mt-1">{formatTime(activity.movingSeconds)}</p>
+          </div>
+          <div className="p-4 rounded-3xl bg-zinc-900 border border-zinc-800">
+            <p className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">Avg Pace</p>
+            <p className="text-2xl font-black font-headline text-white mt-1">{avgPace} <span className="text-xs text-zinc-400">/km</span></p>
+          </div>
+          <div className="p-4 rounded-3xl bg-zinc-900 border border-zinc-800">
+            <p className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">Calories</p>
+            <p className="text-2xl font-black font-headline text-white mt-1">{activity.calories} <span className="text-xs text-zinc-400">kcal</span></p>
+          </div>
+        </div>
+
+        {/* Read-Only Route Replay Map (Draws REAL recorded points only) */}
+        <div className="rounded-3xl overflow-hidden border border-zinc-800 bg-zinc-900 h-56 relative shadow-lg">
+          {mapPositions.length > 1 ? (
+            <LiveMap
+              isReadOnly={true}
+              initialPositions={mapPositions}
+              splits={activity.splits}
+            />
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center space-y-2 text-zinc-500">
+              <span className="material-symbols-outlined text-3xl">route</span>
+              <p className="text-xs font-bold uppercase tracking-wider">No GPS Route Recorded</p>
+              <p className="text-[11px] text-zinc-600">Route was entered manually or GPS fix was unavailable.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Per-Km Splits Table */}
+        {activity.splits.length > 0 && (
+          <div className="p-5 rounded-3xl bg-zinc-900 border border-zinc-800 space-y-3">
+            <div className="flex justify-between items-center">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-300">Kilometer Splits</h4>
+              {bestSplit && (
+                <span className="text-[10px] font-bold text-emerald-400">
+                  Best: {bestSplit.km}k in {bestSplit.pace}/km
+                </span>
+              )}
+            </div>
+            <div className="space-y-2 pt-1">
+              {activity.splits.map((s) => (
+                <div key={s.km} className="flex justify-between items-center text-xs py-1 border-b border-zinc-800/60 last:border-none">
+                  <span className="font-bold text-zinc-400">{s.km} km</span>
+                  <span className="font-mono text-zinc-300">{formatTime(s.seconds)}</span>
+                  <span className={`font-bold ${bestSplit?.km === s.km ? 'text-emerald-400' : 'text-zinc-200'}`}>
+                    {s.pace} /km
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
-      </AnimatePresence>
 
-      <div className="relative z-[100]">
-        <BottomNav />
+        {/* Action Buttons: Post to Feed, Share Clipboard, and Done */}
+        <div className="space-y-2.5 pt-2">
+          <button
+            type="button"
+            onClick={onPostToFeed}
+            disabled={isPostedToFeed}
+            className="w-full py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 disabled:bg-zinc-800 disabled:text-zinc-500 text-zinc-950 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20"
+          >
+            <span className="material-symbols-outlined text-base">
+              {isPostedToFeed ? 'done_all' : 'share'}
+            </span>
+            {isPostedToFeed ? 'Posted to Feed' : 'Post to Community Feed'}
+          </button>
+
+          <button
+            type="button"
+            onClick={onCopyShare}
+            className="w-full py-3 rounded-2xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-white text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2"
+          >
+            <span className="material-symbols-outlined text-base">content_copy</span>
+            Copy Achievement Summary
+          </button>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full py-3 rounded-2xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold uppercase tracking-wider transition-colors"
+          >
+            Done & Return to Analytics
+          </button>
+        </div>
       </div>
     </div>
   );

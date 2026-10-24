@@ -47,6 +47,7 @@ export default {
         "on-secondary-container": "#fefcff",
         "surface-container-low": "#f3f3f8",
         "background": "#f9f9fe",
+        "bg-primary": "#f9f9fe",
         "on-primary-fixed-variant": "#474746",
         "secondary": "#0058bc",
         "surface-variant": "#e2e2e7",

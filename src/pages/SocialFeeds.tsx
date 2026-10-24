@@ -605,7 +605,7 @@ export default function SocialFeeds() {
         <div className="flex justify-between items-center px-8 py-5">
           <div className="flex flex-col">
             <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white uppercase leading-none">Network</h1>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 mt-1">Activity Hub</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 mt-1">Activity Hub • Demo Data</p>
           </div>
           <div className="flex items-center gap-2">
              <button onClick={handleOpenSearch} className="w-11 h-11 flex items-center justify-center rounded-xl bg-zinc-50 dark:bg-zinc-900 active:scale-90 transition-transform">

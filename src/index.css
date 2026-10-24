@@ -44,4 +44,18 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+  .leaflet-control-attribution {
+    font-size: 8px !important;
+    line-height: 1.2 !important;
+    background: rgba(9, 9, 11, 0.75) !important;
+    color: #71717a !important;
+    padding: 2px 6px !important;
+    border-radius: 6px !important;
+    margin: 4px !important;
+    backdrop-filter: blur(8px);
+  }
+  .leaflet-control-attribution a {
+    color: #a1a1aa !important;
+    text-decoration: underline;
+  }
 }

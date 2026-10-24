@@ -24,7 +24,7 @@ export default function Marketplace() {
     }
     setTokens(tokens - item.cost);
     addReward(item);
-    toast.success(`Redeemed ${item.title}! Check your email for instructions.`, "Success");
+    toast.success(`Redeemed ${item.title}! Reward saved to your inventory.`, "Success");
   };
 
   return (
@@ -40,7 +40,7 @@ export default function Marketplace() {
           </button>
           <div className="text-center">
              <h1 className="text-xl font-black tracking-tight text-zinc-900 dark:text-white uppercase leading-none">Marketplace</h1>
-             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 mt-1">Token Store</p>
+             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 mt-1">Token Store • Demo Data</p>
           </div>
           <div className="flex items-center gap-2 bg-zinc-900 dark:bg-zinc-100 px-4 py-2.5 rounded-2xl shadow-xl shadow-zinc-900/20 dark:shadow-none border border-white/10">
              <Zap size={14} className="text-emerald-400 fill-current" />
@@ -56,7 +56,10 @@ export default function Marketplace() {
               <ShoppingBag size={140} />
            </div>
            <div className="relative z-10 space-y-4">
-              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">Exclusive Rewards</span>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">Exclusive Rewards</span>
+                <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Demo Store</span>
+              </div>
               <h2 className="text-3xl font-black tracking-tight leading-[1.1]">Trade your hard work<br />for real results.</h2>
            </div>
         </section>

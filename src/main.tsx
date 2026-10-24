@@ -4,6 +4,9 @@ import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import App from './App.tsx'
 import './index.css'
+import { initSentry } from './lib/sentry'
+
+initSentry();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

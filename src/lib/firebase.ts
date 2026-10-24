@@ -1,5 +1,6 @@
 import { initializeApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, type Auth } from 'firebase/auth';
+import { getFirestore, type Firestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -10,21 +11,28 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-// Only initialize Firebase if the config is present
-const isConfigured = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId);
+// Only initialize Firebase if valid non-placeholder config is present
+const isConfigured = Boolean(
+  firebaseConfig.apiKey &&
+  firebaseConfig.apiKey !== 'your_firebase_api_key' &&
+  firebaseConfig.projectId &&
+  firebaseConfig.projectId !== 'your_project_id'
+);
 
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
+let db: Firestore | null = null;
 let googleProvider: GoogleAuthProvider | null = null;
 
 if (isConfigured) {
   try {
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
+    db = getFirestore(app);
     googleProvider = new GoogleAuthProvider();
   } catch (error) {
     console.warn('Firebase initialization failed:', error);
   }
 }
 
-export { auth, googleProvider, isConfigured };
+export { app, auth, db, googleProvider, isConfigured };

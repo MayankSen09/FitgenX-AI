@@ -8,7 +8,6 @@ const QUICK_ACTIONS = [
   { label: 'Companion', icon: 'pets', path: '/creature' },
   { label: 'AI Coach', icon: 'smart_toy', path: '/ai-coach' },
   { label: 'Track Run', icon: 'directions_run', path: '/track' },
-  { label: 'Journey', icon: 'route', path: '/journey' },
   { label: 'Workouts', icon: 'fitness_center', path: '/workouts' },
   { label: 'Timer', icon: 'timer', path: '/timer' },
   { label: 'Challenges', icon: 'emoji_events', path: '/challenges' },
@@ -220,14 +219,9 @@ export default function BottomNav() {
             {leftNav.map(renderNavItem)}
           </div>
 
-          {/* Center spacer + label */}
-          <div className="flex flex-col items-center justify-center" style={{ width: CENTER_SIZE + 8 }}>
-            {/* Spacer for the floating button */}
-            <div style={{ height: 28 }} />
-            <span className={`text-[8px] uppercase tracking-[0.15em] font-black transition-colors whitespace-nowrap ${isCenterActive ? 'text-zinc-900 dark:text-white' : 'text-zinc-500'}`}>
-              {isMenuOpen ? 'Close' : (quickOption?.label || 'Action')}
-            </span>
-            <div className={`w-1.5 h-1.5 rounded-full mt-1 transition-all ${isCenterActive ? 'bg-zinc-900 dark:bg-white opacity-100' : 'bg-transparent opacity-0'}`} />
+          {/* Center action button spacer - keeps symmetrical spacing without text clipping behind floating button */}
+          <div className="flex flex-col items-center justify-end pb-1" style={{ width: CENTER_SIZE + 4, height: 48 }}>
+            <div className={`w-1.5 h-1.5 rounded-full transition-all ${isCenterActive ? 'bg-zinc-900 dark:bg-white opacity-100' : 'bg-transparent opacity-0'}`} />
           </div>
 
           {/* Right nav items */}

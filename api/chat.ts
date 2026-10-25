@@ -38,10 +38,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return res.status(429).json({ error: 'Too many requests. Please wait before sending another message.' });
   }
 
-  const API_KEY = process.env.GEMINI_API_KEY;
+  const API_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
 
   if (!API_KEY) {
-    return res.status(500).json({ error: 'AI Coach intelligence core is not configured on the server.' });
+    return res.status(500).json({ error: 'AI Coach intelligence core is not configured on the server. Please set GEMINI_API_KEY in your environment.' });
   }
 
   const rawPrompt = req.body?.prompt;
@@ -56,34 +56,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   const prompt = sanitizePrompt(rawPrompt);
   const safeHistory = Array.isArray(history) ? history.slice(-MAX_HISTORY_ITEMS) : [];
 
-  try {
-    const genAI = new GoogleGenerativeAI(API_KEY);
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash',
-      systemInstruction: INITIAL_CHAT_PROMPT,
-    });
+  const modelsToTry = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+  const genAI = new GoogleGenerativeAI(API_KEY);
 
-    const chatHistory = [
-      { role: 'user' as const, parts: [{ text: INITIAL_CHAT_PROMPT }] },
-      { role: 'model' as const, parts: [{ text: 'Understood, Athlete. I am ready to optimize your performance.' }] },
-      ...safeHistory,
-    ];
+  const chatHistory = [
+    { role: 'user' as const, parts: [{ text: INITIAL_CHAT_PROMPT }] },
+    { role: 'model' as const, parts: [{ text: 'Understood, Athlete. I am ready to optimize your performance.' }] },
+    ...safeHistory,
+  ];
 
-    const chat = model.startChat({
-      history: chatHistory as any,
-      generationConfig: {
-        maxOutputTokens,
-      },
-    });
+  let lastError: unknown = null;
 
-    const result = await chat.sendMessage(prompt);
-    const responseText = await result.response.text();
+  for (const modelName of modelsToTry) {
+    try {
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        systemInstruction: INITIAL_CHAT_PROMPT,
+      });
 
-    return res.status(200).json({ response: responseText });
-  } catch (error) {
-    // Log server error securely without logging user prompt, history, profile data, or API keys
-    const errorMessage = error instanceof Error ? error.message : 'Unknown generation failure';
-    console.error(`[API/Chat Error] Gemini model generation failed (${mode} mode): ${errorMessage}`);
-    return res.status(500).json({ error: 'Failed to generate response' });
+      const chat = model.startChat({
+        history: chatHistory as any,
+        generationConfig: {
+          maxOutputTokens,
+        },
+      });
+
+      const result = await chat.sendMessage(prompt);
+      const responseText = await result.response.text();
+
+      return res.status(200).json({ response: responseText });
+    } catch (err) {
+      lastError = err;
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`[API/Chat] Model ${modelName} attempt failed: ${msg}. Trying next fallback...`);
+    }
   }
+
+  const errorMessage = lastError instanceof Error ? lastError.message : 'Unknown generation failure';
+  console.error(`[API/Chat Error] All Gemini models failed (${mode} mode): ${errorMessage}`);
+  return res.status(500).json({ error: 'Failed to generate response', details: errorMessage });
 }

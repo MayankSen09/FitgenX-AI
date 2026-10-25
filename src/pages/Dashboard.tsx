@@ -17,19 +17,25 @@ export default function Dashboard() {
   const streak = getStreak();
   const todaysWorkouts = getTodaysWorkouts();
 
-  // Build the week display
+  // Build rolling 7-day window ending today (today leftmost, then yesterday, back 6 days)
   const today = new Date();
-  const dayOfWeek = today.getDay(); // 0=Sun
   const dayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
-  const weekDays = dayLabels.map((label, i) => {
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
     const dateObj = new Date(today);
-    dateObj.setDate(today.getDate() - dayOfWeek + i);
+    dateObj.setDate(today.getDate() - i);
     const dateStr = dateObj.toISOString().split('T')[0];
-    const hasWorkout = workoutHistory.some((w) => w.date.startsWith(dateStr));
-    const isToday = i === dayOfWeek;
-    const isPast = i < dayOfWeek;
-    return { label, date: dateObj.getDate(), isToday, isPast, hasWorkout };
+    const localDateStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+    const hasWorkout = workoutHistory.some((w) => w.date.startsWith(dateStr) || w.date.startsWith(localDateStr));
+    const isToday = i === 0;
+    const isPast = i > 0;
+    return {
+      label: dayLabels[dateObj.getDay()],
+      date: dateObj.getDate(),
+      isToday,
+      isPast,
+      hasWorkout,
+    };
   });
 
   return (

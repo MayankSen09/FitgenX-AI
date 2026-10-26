@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useAppStore } from '../../store/useAppStore';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -8,10 +9,12 @@ interface ProtectedRouteProps {
 
 /**
  * Route protection wrapper. Ensures that only authenticated users can access
- * private routes, redirecting unauthenticated users to the login screen.
+ * private routes, redirecting unauthenticated users to the login screen,
+ * and users without an athlete profile to the onboarding/details screen.
  */
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
+  const { profile } = useAppStore();
   const location = useLocation();
 
   if (loading) {
@@ -27,6 +30,10 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (!profile || !profile.name || !profile.name.trim()) {
+    return <Navigate to="/onboarding" replace />;
   }
 
   return <>{children}</>;

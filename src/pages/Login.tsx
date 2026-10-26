@@ -1,9 +1,11 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, getFriendlyAuthErrorMessage } from '../contexts/AuthContext';
+import { useAppStore } from '../store/useAppStore';
 
 export default function Login() {
   const navigate = useNavigate();
+  const { profile } = useAppStore();
   const {
     user,
     isFirebaseConfigured,
@@ -23,7 +25,7 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const hasCompletedOnboarding = localStorage.getItem('fitgenx-onboarding-complete') === 'true';
+  const hasCompletedOnboarding = Boolean(profile?.name?.trim()) && localStorage.getItem('fitgenx-onboarding-complete') === 'true';
 
   // If already logged in, redirect inside an effect
   useEffect(() => {

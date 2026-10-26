@@ -17,18 +17,19 @@ export default function Dashboard() {
   const streak = getStreak();
   const todaysWorkouts = getTodaysWorkouts();
 
-  // Build rolling 7-day window ending today (today leftmost, then yesterday, back 6 days)
+  // Build 7-day window starting from today and going forward chronologically (today, tomorrow, etc.)
   const today = new Date();
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const dayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const dateObj = new Date(today);
-    dateObj.setDate(today.getDate() - i);
+    dateObj.setDate(today.getDate() + i);
     const dateStr = dateObj.toISOString().split('T')[0];
     const localDateStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
     const hasWorkout = workoutHistory.some((w) => w.date.startsWith(dateStr) || w.date.startsWith(localDateStr));
     const isToday = i === 0;
-    const isPast = i > 0;
+    const isPast = dateObj < todayStart;
     return {
       label: dayLabels[dateObj.getDay()],
       date: dateObj.getDate(),
@@ -56,10 +57,7 @@ export default function Dashboard() {
             )}
           </button>
           <div>
-            <p className="text-[0.6rem] font-bold uppercase tracking-widest text-secondary font-label leading-none">
-              {profile?.college || 'FitGenX Athlete'}
-            </p>
-            <h1 className="text-xl font-extrabold tracking-tighter text-zinc-900 font-headline">Welcome, {userName}</h1>
+            <h1 className="text-xl font-extrabold tracking-tighter text-zinc-900 dark:text-zinc-50 font-headline">Welcome, {userName}</h1>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -68,6 +66,29 @@ export default function Dashboard() {
       </header>
 
       <main className="mt-24 px-6 max-w-[430px] mx-auto space-y-6">
+
+        {/* ─── Profile Setup Prompt (if incomplete) ─── */}
+        {(!profile || !profile.name) && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-4 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-between gap-3 shadow-sm"
+          >
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined text-primary text-2xl">account_circle</span>
+              <div>
+                <h3 className="font-bold text-xs text-zinc-900 dark:text-zinc-50">Set Up Your Profile & Name</h3>
+                <p className="text-[11px] text-zinc-500">Enable AI Coach to personalize routines for your body & goals.</p>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate('/onboarding')}
+              className="px-3 py-1.5 bg-primary text-white text-xs font-bold rounded-xl shrink-0 active:scale-95 transition-transform"
+            >
+              Start
+            </button>
+          </motion.div>
+        )}
 
         {/* ─── Activity Streak ─── */}
         <section>
@@ -91,7 +112,7 @@ export default function Dashboard() {
               >
                 <span className={`text-[0.6rem] font-bold font-label transition-colors group-hover:text-secondary ${day.isToday ? 'text-secondary' : 'text-on-surface-variant'}`}>{day.label}</span>
                 <div className={`w-10 h-14 rounded-full flex items-center justify-center transition-all duration-300 group-hover:shadow-md ${
-                  day.isToday ? 'bg-secondary text-white shadow-lg shadow-secondary/20' :
+                  day.isToday ? (day.hasWorkout ? 'vitality-gradient text-white shadow-lg shadow-secondary/20 ring-2 ring-secondary' : 'bg-secondary text-white shadow-lg shadow-secondary/20') :
                   day.hasWorkout ? 'vitality-gradient text-white shadow-sm' :
                   day.isPast ? 'bg-red-500/10 border border-red-500/20 group-hover:bg-red-500/20' : 'bg-surface-container-low border border-outline-variant/10 group-hover:border-secondary/30'
                 }`}>

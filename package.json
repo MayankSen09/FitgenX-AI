@@ -6,8 +6,8 @@
   "author": "FitGenX Team",
   "type": "module",
   "scripts": {
-    "dev:frontend": "vite",
-    "dev:backend": "bun --watch server/index.ts",
+    "dev:frontend": "bun x vite",
+    "dev:backend": "bun server/index.ts",
     "dev": "concurrently \"bun run dev:backend\" \"bun run dev:frontend\"",
     "build": "tsc -b && vite build",
     "lint": "tsc --noEmit",

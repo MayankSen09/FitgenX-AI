@@ -66,6 +66,13 @@ export default function Profile() {
                   <p className="text-primary text-[11px] uppercase tracking-wider font-bold">{profile.college}</p>
                 )}
               </div>
+              <button
+                onClick={() => navigate('/onboarding')}
+                className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container-high hover:bg-surface-container-highest text-xs font-bold text-zinc-700 dark:text-zinc-200 transition-all active:scale-95 border border-zinc-200 dark:border-zinc-800"
+              >
+                <span className="material-symbols-outlined text-[15px] text-primary">edit_note</span>
+                {profile ? 'Edit Athlete Details' : 'Set Up Athlete Profile'}
+              </button>
             </div>
           </div>
         </section>
@@ -97,10 +104,41 @@ export default function Profile() {
           </div>
           <p className="text-xs text-on-surface-variant">Goal: 300 minutes per week</p>
         </section>
+
+        {/* Incomplete Profile Prompt if profile is missing */}
+        {!profile && (
+          <section className="bg-primary/5 p-6 rounded-2xl border border-primary/20 space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                <span className="material-symbols-outlined text-xl">assignment_ind</span>
+              </div>
+              <div>
+                <h3 className="font-headline font-bold text-sm">Profile Details Missing</h3>
+                <p className="text-xs text-on-surface-variant">Your AI Coach needs your biometric data & goals to personalize plans.</p>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate('/onboarding')}
+              className="w-full py-2.5 rounded-xl vitality-gradient text-white text-xs font-bold uppercase tracking-wider shadow-md hover:opacity-90 active:scale-98 transition-all"
+            >
+              Complete Athlete Details
+            </button>
+          </section>
+        )}
+
         {/* Fitness Profile */}
         {profile && (
           <section className="bg-surface-container-low p-6 rounded-2xl space-y-4">
-            <h3 className="font-headline text-lg font-bold">Fitness Profile</h3>
+            <div className="flex justify-between items-center">
+              <h3 className="font-headline text-lg font-bold">Fitness Profile</h3>
+              <button
+                onClick={() => navigate('/onboarding')}
+                className="text-primary text-xs font-bold flex items-center gap-1 hover:underline"
+              >
+                <span className="material-symbols-outlined text-sm">edit</span>
+                Edit Details
+              </button>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <p className="text-[10px] uppercase tracking-widest font-bold text-outline">Activity</p>

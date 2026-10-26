@@ -16,19 +16,32 @@ export const ALLOWED_ORIGINS = [
   'http://localhost:5173',
   'http://localhost:4173',
   'http://localhost:5000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:4173',
+  'http://127.0.0.1:5000',
 ];
 
 /**
- * Validates request origin against allowlisted domains.
+ * Validates request origin against strict allowlist and known project preview patterns.
+ * Prevents arbitrary third-party .vercel.app or localhost subdomain hijacking.
  */
 export function isOriginAllowed(origin: string | undefined): boolean {
   if (!origin) return false;
-  return (
-    ALLOWED_ORIGINS.includes(origin) ||
-    origin.endsWith('.vercel.app') ||
-    origin.includes('localhost') ||
-    origin.includes('127.0.0.1')
-  );
+  
+  // 1. Exact match against known production and development domains
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    return true;
+  }
+
+  // 2. Strict regex for authentic project preview deployments only
+  const isProjectVercelPreview = /^https:\/\/(fitgen-x-ai|genx-one)(-[a-z0-9-]+)?\.vercel\.app$/.test(origin);
+  if (isProjectVercelPreview) {
+    return true;
+  }
+
+  // 3. Strict local development host checking (exact port bindings)
+  const isLocalDev = /^http:\/\/(localhost|127\.0\.0\.1):(5173|4173|5000)$/.test(origin);
+  return isLocalDev;
 }
 
 /**
@@ -43,18 +56,33 @@ export function sanitizePrompt(prompt: string): string {
 }
 
 /**
- * In-memory per-IP rate limiter.
- * Note: In-memory rate limiting resets on serverless cold starts. This provides
- * basic per-instance abuse mitigation, not distributed rate limiting across serverless regions.
+ * In-memory per-IP rate limiter with automatic cleanup to prevent memory exhaustion.
  */
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
+// Periodic cleanup of expired entries every 5 minutes to prevent memory leak
+const CLEANUP_INTERVAL_MS = 5 * 60_000;
+let lastCleanup = Date.now();
+
+function purgeExpiredEntries(now: number) {
+  if (now - lastCleanup < CLEANUP_INTERVAL_MS) return;
+  lastCleanup = now;
+  for (const [key, value] of rateLimitMap.entries()) {
+    if (now > value.resetAt) {
+      rateLimitMap.delete(key);
+    }
+  }
+}
+
 export function isRateLimited(ip: string, limit = 20, windowMs = 60_000): boolean {
   const now = Date.now();
-  const entry = rateLimitMap.get(ip);
+  purgeExpiredEntries(now);
+
+  const cleanIp = String(ip || 'unknown').slice(0, 64);
+  const entry = rateLimitMap.get(cleanIp);
 
   if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + windowMs });
+    rateLimitMap.set(cleanIp, { count: 1, resetAt: now + windowMs });
     return false;
   }
 
@@ -67,7 +95,7 @@ export function isRateLimited(ip: string, limit = 20, windowMs = 60_000): boolea
 }
 
 /**
- * Extracts client IP address from proxy headers or connection socket.
+ * Extracts client IP address safely from proxy headers or connection socket.
  */
 export function getClientIp(req: any): string {
   const fwd = req.headers?.['x-forwarded-for'];

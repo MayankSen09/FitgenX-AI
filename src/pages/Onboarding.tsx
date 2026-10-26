@@ -2,27 +2,30 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../store/useAppStore';
+import { useAuth } from '../contexts/AuthContext';
+import { toast } from '../components/common/Toast';
 
 export default function Onboarding() {
   const navigate = useNavigate();
-  const { setProfile } = useAppStore();
+  const { user } = useAuth();
+  const { profile, setProfile } = useAppStore();
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState(0);
   
-  // Form State
-  const [name, setName] = useState('');
-  const [college, setCollege] = useState('');
-  const [gender, setGender] = useState('Male');
-  const [focus, setFocus] = useState('Gain muscle');
-  const [level, setLevel] = useState('Intermediate');
-  const [preferences, setPreferences] = useState<string[]>(['Gym']);
-  const [age, setAge] = useState('24');
-  const [height, setHeight] = useState('178');
-  const [weight, setWeight] = useState('72.5');
-  const [activityLevel, setActivityLevel] = useState('Moderately Active');
-  const [fitnessHistory, setFitnessHistory] = useState('1-2 years');
-  const [workoutFrequency, setWorkoutFrequency] = useState('4');
-  const [medicalConditions, setMedicalConditions] = useState('None');
+  // Form State prefilled with profile or authenticated user details
+  const [name, setName] = useState(profile?.name || user?.displayName || '');
+  const [college, setCollege] = useState(profile?.college || '');
+  const [gender, setGender] = useState(profile?.gender || 'Male');
+  const [focus, setFocus] = useState(profile?.focus || 'Gain muscle');
+  const [level, setLevel] = useState(profile?.level || 'Intermediate');
+  const [preferences, setPreferences] = useState<string[]>(profile?.preferences || ['Gym']);
+  const [age, setAge] = useState(profile?.age || '24');
+  const [height, setHeight] = useState(profile?.height || '178');
+  const [weight, setWeight] = useState(profile?.weight || '72.5');
+  const [activityLevel, setActivityLevel] = useState(profile?.activityLevel || 'Moderately Active');
+  const [fitnessHistory, setFitnessHistory] = useState(profile?.fitnessHistory || '1-2 years');
+  const [workoutFrequency, setWorkoutFrequency] = useState(profile?.workoutFrequency || '4');
+  const [medicalConditions, setMedicalConditions] = useState(profile?.medicalConditions || 'None');
 
   // AI Generation State
   const [isGenerating, setIsGenerating] = useState(false);
@@ -35,6 +38,10 @@ export default function Onboarding() {
   };
 
   const nextStep = () => {
+    if (step === 1 && !name.trim()) {
+      toast.error('Please enter your name to proceed.');
+      return;
+    }
     if (step < 4) {
       setDirection(1);
       setStep(s => s + 1);
@@ -113,6 +120,19 @@ export default function Onboarding() {
       <main className="relative z-10 min-h-screen flex flex-col items-center px-6 pt-12 pb-24 max-w-2xl mx-auto overflow-hidden">
         {step < 5 && (
           <header className="w-full mb-12 text-center">
+            {profile?.name && (
+              <div className="flex justify-between items-center mb-6">
+                <button
+                  type="button"
+                  onClick={() => navigate('/profile')}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container-high text-xs font-bold text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition-all active:scale-95 border border-zinc-200 dark:border-zinc-800"
+                >
+                  <span className="material-symbols-outlined text-sm">arrow_back</span>
+                  Back to Profile
+                </button>
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-primary bg-primary/10 px-2.5 py-1 rounded-full">Editing Details</span>
+              </div>
+            )}
             <div className="flex justify-between items-end mb-8">
               <div className="text-left">
                 <span className="font-label text-label-sm uppercase tracking-widest text-secondary font-bold">

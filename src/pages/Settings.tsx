@@ -4,6 +4,7 @@ import { deleteUser } from 'firebase/auth';
 import BottomNav from '../components/layout/BottomNav';
 import { useSettingsStore, QUICK_ACTION_OPTIONS } from '../stores/settingsStore';
 import { useAuth } from '../contexts/AuthContext';
+import { useAppStore } from '../store/useAppStore';
 import { getUserExportData, deleteUserFirestoreData } from '../services/gymFirestoreService';
 
 /**
@@ -13,6 +14,7 @@ import { getUserExportData, deleteUserFirestoreData } from '../services/gymFires
 export default function Settings() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { profile } = useAppStore();
   const { quickActionPath, setQuickActionPath } = useSettingsStore();
 
   const [isExporting, setIsExporting] = useState(false);
@@ -189,6 +191,51 @@ export default function Settings() {
             </div>
             <span className="material-symbols-outlined text-white/30 dark:text-zinc-300 group-hover:translate-x-1 transition-transform">arrow_forward</span>
           </button>
+        </section>
+
+        {/* Athlete Profile & University Details */}
+        <section className="space-y-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="font-headline text-lg font-bold text-zinc-900 dark:text-zinc-50">Athlete Profile</h2>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                Your university affiliation and fitness parameters.
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/onboarding')}
+              className="text-primary text-xs font-bold flex items-center gap-1 hover:underline shrink-0"
+            >
+              <span className="material-symbols-outlined text-sm">edit</span>
+              Edit Details
+            </button>
+          </div>
+
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-5 divide-y divide-zinc-100 dark:divide-zinc-800">
+            <div className="py-3 first:pt-0 flex justify-between items-center">
+              <div>
+                <p className="text-xs text-zinc-500 font-medium">College / University</p>
+                <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mt-0.5">{profile?.college || 'Not specified'}</p>
+              </div>
+              <span className="material-symbols-outlined text-zinc-400 text-xl">school</span>
+            </div>
+
+            <div className="py-3 flex justify-between items-center">
+              <div>
+                <p className="text-xs text-zinc-500 font-medium">Athlete Name</p>
+                <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mt-0.5">{profile?.name || user?.displayName || 'Champion'}</p>
+              </div>
+              <span className="material-symbols-outlined text-zinc-400 text-xl">person</span>
+            </div>
+
+            <div className="py-3 last:pb-0 flex justify-between items-center">
+              <div>
+                <p className="text-xs text-zinc-500 font-medium">Primary Focus</p>
+                <p className="text-sm font-bold text-secondary mt-0.5">{profile?.focus || 'Gain muscle'}</p>
+              </div>
+              <span className="material-symbols-outlined text-zinc-400 text-xl">fitness_center</span>
+            </div>
+          </div>
         </section>
 
         {/* Account & Privacy Section */}
